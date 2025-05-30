@@ -6,14 +6,32 @@
         <ul class="space-y-3">
             <li>
                 <a href="{{ route('dashboard') }}"
-                    class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
                     <span class="flex-1">🏠 Dashboard</span>
                 </a>
             </li>
             <li>
-                <a href="#"
-                    class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
-                    <span class="flex-1">📊 Finance</span>
+                <a href="{{ route('customers.index') }}"
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                    <span class="flex-1">🧍 Customers</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('service-types.index') }}"
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                    <span class="flex-1">🛎️ Service Types</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('transactions.index') }}"
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                    <span class="flex-1">🔄 Transactions</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('payments.index') }}"
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                    <span class="flex-1">💰 Payments</span>
                 </a>
             </li>
         </ul>
@@ -26,7 +44,7 @@
 <!-- Hamburger Toggle -->
 <button id="sidebarToggle" class="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-200 dark:bg-gray-700 rounded-lg">
     <svg class="w-6 h-6 text-gray-800 dark:text-gray-200" xmlns="http://www.w3.org/2000/svg" fill="none"
-        viewBox="0 0 24 24" stroke="currentColor">
+         viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
     </svg>
 </button>
