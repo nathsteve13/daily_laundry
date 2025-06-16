@@ -19,6 +19,7 @@ class OrderRequest extends Model
         'phone_number',
         'estimated_value',
         'service_type_id',
+        'delivery_type',
         'created_at',
         'updated_at',
     ];

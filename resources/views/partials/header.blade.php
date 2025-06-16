@@ -21,7 +21,7 @@
             </div>
             <div class="header-right d-none d-lg-block">
                 <a href="#" class="header-btn1"><img src="{{ asset('assets/img/icon/call.png') }}" alt=""> (08) 728 256 266</a>
-                <a href="#appointment" class="header-btn2">Make an Appointment</a>
+                <a href="{{route('pesan.create')}}" class="header-btn2">Make an Appointment</a>
             </div>
             <div class="col-12">
                 <div class="mobile_menu d-block d-lg-none"></div>

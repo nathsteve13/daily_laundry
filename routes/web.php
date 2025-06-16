@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PesanController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CustomerController;
@@ -10,6 +11,9 @@ use App\Http\Controllers\TransactionController;
 Route::get('/', function () {
     return view('home');
 });
+
+Route::get('/pesan', [PesanController::class, 'create'])->name('pesan.create');
+Route::post('/pesan', [PesanController::class, 'store'])->name('pesan.store');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
