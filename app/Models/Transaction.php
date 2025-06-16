@@ -61,4 +61,10 @@ class Transaction extends Model
         return $this->hasMany(PickupList::class, 'no_transaction', 'no_transaction');
     }
 
+    public function transactionStatus()
+    {
+        return $this->hasMany(TransactionStatus::class, 'no_transaction', 'no_transaction');
+    }
+
+
 }

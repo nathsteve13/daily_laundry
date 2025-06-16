@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/order', [OrderController::class, 'index'])->name('order.index');
     Route::post('/order/terima', [OrderController::class, 'terima'])->name('order.terima');
+    Route::post('/transactions/status-update', [TransactionController::class, 'updateStatus'])->name('transactions.status.update');
 
 
 });

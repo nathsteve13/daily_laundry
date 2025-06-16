@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\ServiceType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\TransactionStatus;
 
 class TransactionController extends Controller
 {
@@ -19,6 +20,42 @@ class TransactionController extends Controller
             return back()->with('error', 'Failed to load transactions');
         }
     }
+
+
+    public function updateStatus(Request $request)
+    {
+        try {
+            $request->validate([
+                'no_transaction' => 'required|exists:transactions,no_transaction',
+                'status' => 'required|in:pending,pickup,proccessed,ready,delivered,done',
+            ]);
+
+            $status = TransactionStatus::create([
+                'no_transaction' => $request->no_transaction,
+                'status' => $request->status,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'status' => ucfirst($status->status),
+                'badge' => match($status->status) {
+                    'pending' => 'secondary',
+                    'pickup' => 'warning',
+                    'proccessed' => 'info',
+                    'ready' => 'primary',
+                    'delivered' => 'dark',
+                    'done' => 'success',
+                    default => 'light'
+                },
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['success' => false]);
+        }
+    }
+
 
     public function create()
     {

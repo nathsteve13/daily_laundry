@@ -39,6 +39,7 @@
                         <th>Discount</th>
                         <th>Total</th>
                         <th>User ID</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -50,6 +51,24 @@
                         <td>{{ $t->discount }}</td>
                         <td>{{ $t->total }}</td>
                         <td>{{ $t->users_id }}</td>
+                        <td>
+                            @php
+                                $latestStatus = $t->transactionStatus->sortByDesc('created_at')->first();
+                            @endphp
+                            <span id="status-{{ $t->no_transaction }}" class="badge bg-{{ match($latestStatus?->status) {
+                                'pending' => 'secondary',
+                                'pickup' => 'warning',
+                                'proccessed' => 'info',
+                                'ready' => 'primary',
+                                'delivered' => 'dark',
+                                'done' => 'success',
+                                default => 'light'
+                            } }}">
+                                <a href="#" onclick="openStatusModal('{{ $t->no_transaction }}')" class="text-white text-decoration-none">
+                                    {{ ucfirst($latestStatus?->status ?? 'unknown') }}
+                                </a>
+                            </span>
+                        </td>
                         <td class="text-end d-flex gap-2 justify-end">
                             <a href="{{ route('transactions.edit', $t->no_transaction) }}" class="btn btn-outline-dark btn-sm notion-btn">Edit</a>
                             <form action="{{ route('transactions.destroy', $t->no_transaction) }}" method="POST">
@@ -60,8 +79,92 @@
                     </tr>
                     @endforeach
                 </tbody>
+
             </table>
+
+            <!-- Modal Ubah Status -->
+            <div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <form id="statusForm">
+                        @csrf
+                        <input type="hidden" name="no_transaction" id="modal_no_transaction">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Ubah Status Transaksi</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body space-y-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Status Baru</label>
+                                    <select name="status" class="form-select" required>
+                                        <option value="pending">Pending</option>
+                                        <option value="pickup">Pickup</option>
+                                        <option value="proccessed">Proccessed</option>
+                                        <option value="ready">Ready</option>
+                                        <option value="delivered">Delivered</option>
+                                        <option value="done">Done</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-success" type="submit">✔ Simpan</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
         </div>
     </div>
 
 @endsection
+@push('scripts')
+<script>
+    function openStatusModal(no_transaction) {
+        document.getElementById('modal_no_transaction').value = no_transaction;
+        const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+        modal.show();
+    }
+</script>
+@endpush
+
+@push('scripts')
+<script>
+    function openStatusModal(no_transaction) {
+        document.getElementById('modal_no_transaction').value = no_transaction;
+        const modal = new bootstrap.Modal(document.getElementById('statusModal'));
+        modal.show();
+    }
+
+    document.getElementById('statusForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const form = e.target;
+        const data = new FormData(form);
+        const no_transaction = data.get('no_transaction');
+        const status = data.get('status');
+
+        fetch("{{ route('transactions.status.update') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+            },
+            body: data
+        })
+        .then(response => response.json())
+        .then(res => {
+            if (res.success) {
+                const badge = document.getElementById('status-' + no_transaction);
+                badge.className = 'badge bg-' + res.badge;
+                badge.innerHTML = `<a href="#" onclick="openStatusModal('${no_transaction}')" class="text-white text-decoration-none">${res.status}</a>`;
+                bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+            } else {
+                alert('Gagal mengupdate status.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Terjadi kesalahan.');
+        });
+    });
+</script>
+@endpush
