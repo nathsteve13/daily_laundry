@@ -6,32 +6,38 @@
         <ul class="space-y-3">
             <li>
                 <a href="{{ route('dashboard') }}"
-                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
                     <span class="flex-1">🏠 Dashboard</span>
                 </a>
             </li>
             <li>
                 <a href="{{ route('customers.index') }}"
-                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
                     <span class="flex-1">🧍 Customers</span>
                 </a>
             </li>
             <li>
                 <a href="{{ route('service-types.index') }}"
-                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
                     <span class="flex-1">🛎️ Service Types</span>
                 </a>
             </li>
             <li>
                 <a href="{{ route('transactions.index') }}"
-                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
                     <span class="flex-1">🔄 Transactions</span>
                 </a>
             </li>
             <li>
                 <a href="{{ route('payments.index') }}"
-                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
                     <span class="flex-1">💰 Payments</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('order.index') }}"
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
+                    <span class="flex-1">📦 Orders</span>
                 </a>
             </li>
         </ul>
