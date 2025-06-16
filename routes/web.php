@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\KurirController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PesanController;
 use App\Http\Controllers\PaymentController;
@@ -28,6 +29,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/order/terima', [OrderController::class, 'terima'])->name('order.terima');
     Route::post('/transactions/status-update', [TransactionController::class, 'updateStatus'])->name('transactions.status.update');
 
+    Route::prefix('kurir')->name('kurir.')->group(function () {
+        Route::get('/pengantaran', [KurirController::class, 'index'])->name('pengantaran.index');
+        Route::get('/pengantaran/create', [KurirController::class, 'create'])->name('pengantaran.create');
+        Route::post('/pengantaran', [KurirController::class, 'store'])->name('pengantaran.store');
+        Route::get('/pengantaran/{id}/edit', [KurirController::class, 'edit'])->name('pengantaran.edit');
+        Route::put('/pengantaran/{id}', [KurirController::class, 'update'])->name('pengantaran.update');
+        Route::delete('/pengantaran/{id}', [KurirController::class, 'destroy'])->name('pengantaran.destroy');
+    });
 
 });
 
