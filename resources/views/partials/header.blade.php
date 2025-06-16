@@ -20,8 +20,8 @@
                 </div>
             </div>
             <div class="header-right d-none d-lg-block">
-                <a href="#" class="header-btn1"><img src="{{ asset('assets/img/icon/call.png') }}" alt=""> (08) 728 256 266</a>
-                <a href="{{route('pesan.create')}}" class="header-btn2">Make an Appointment</a>
+                <a href="https://wa.me/081510575807" target="_blank" class="header-btn1"><img src="{{ asset('assets/img/icon/call.png') }}" alt=""> 081510575807</a>
+                <a href="{{route('pesan.create')}}" class="header-btn2">Buat Pesanan</a>
             </div>
             <div class="col-12">
                 <div class="mobile_menu d-block d-lg-none"></div>
