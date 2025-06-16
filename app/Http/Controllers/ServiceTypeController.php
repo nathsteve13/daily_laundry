@@ -37,6 +37,7 @@ class ServiceTypeController extends Controller
 
             return redirect()->route('service-types.index')->with('success', 'Service created');
         } catch (\Exception $e) {
+            dd($e);
             return back()->withInput()->with('error', 'Failed to create service');
         }
     }

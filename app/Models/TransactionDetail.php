@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class TransactionDetail extends Model
 {
+    public $timestamps = false;
     protected $fillable = [
         'no_transaction',
         'pickup',

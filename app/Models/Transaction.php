@@ -38,9 +38,13 @@ class Transaction extends Model
         );
     }
 
-    public function statuses()
+    public function status()
     {
-        return $this->hasMany(TransactionStatus::class, 'no_transaction', 'no_transaction');
+        return $this->hasOne(
+            TransactionStatus::class,
+            'no_transaction',
+            'no_transaction'
+        );
     }
 
     public function payments()

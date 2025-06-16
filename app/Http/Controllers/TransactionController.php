@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Http\Controllers;
 
 use App\Models\Transaction;
@@ -32,7 +31,6 @@ class TransactionController extends Controller
     {
         try {
             $validated = $request->validate([
-                'no_transaction' => 'required|string',
                 'subtotal' => 'required|numeric',
                 'discount' => 'required|numeric',
                 'total' => 'required|numeric',
@@ -40,15 +38,31 @@ class TransactionController extends Controller
                 'customers_id' => 'required|array',
                 'customers_id.*' => 'integer|exists:customers,id',
                 'details' => 'required|array',
-                'details.*.pickup' => 'required|boolean',
-                'details.*.value_per_unit' => 'required|numeric',
                 'details.*.service_type_id' => 'required|integer|exists:service_type,id',
-                'status.status' => 'required|in:pending,proccessed,ready,done'
+                'details.*.value_per_unit' => 'required|numeric',
+                'details.*.pickup' => 'nullable|boolean',
+                'status.status' => 'required|in:pending,proccessed,ready,done',
             ]);
 
             DB::transaction(function () use ($validated) {
+                $datePrefix = now()->format('dmY');
+                $prefix = "TRX-{$datePrefix}-";
+
+                $lastTransaction = Transaction::where('no_transaction', 'like', "$prefix%")
+                    ->orderBy('no_transaction', 'desc')
+                    ->first();
+
+                if ($lastTransaction) {
+                    $lastNumber = (int) substr($lastTransaction->no_transaction, -4);
+                    $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+                } else {
+                    $newNumber = '0001';
+                }
+
+                $noTransaction = $prefix . $newNumber;
+
                 $transaction = Transaction::create([
-                    'no_transaction' => $validated['no_transaction'],
+                    'no_transaction' => $noTransaction,
                     'subtotal' => $validated['subtotal'],
                     'discount' => $validated['discount'],
                     'total' => $validated['total'],
@@ -58,15 +72,26 @@ class TransactionController extends Controller
                 $transaction->customers()->attach($validated['customers_id']);
 
                 foreach ($validated['details'] as $detail) {
-                    $transaction->details()->create($detail);
+                    $pickup = isset($detail['pickup']) ? (bool) $detail['pickup'] : false;
+
+                    $transaction->details()->create([
+                        'service_type_id' => $detail['service_type_id'],
+                        'value_per_unit' => $detail['value_per_unit'],
+                        'pickup' => $pickup,
+                    ]);
                 }
 
-                $transaction->status()->create(['status' => $validated['status']['status']]);
+                $transaction->status()->create([
+                    'status' => $validated['status']['status'],
+                ]);
             });
 
             return redirect()->route('transactions.index')->with('success', 'Transaction created');
-        } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Failed to create transaction');
+        } catch (\Throwable $e) {
+            dd($e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create transaction: ' . $e->getMessage());
         }
     }
 
@@ -96,7 +121,7 @@ class TransactionController extends Controller
                 'details.*.pickup' => 'required|boolean',
                 'details.*.value_per_unit' => 'required|numeric',
                 'details.*.service_type_id' => 'required|integer|exists:service_type,id',
-                'status.status' => 'required|in:pending,proccessed,ready,done'
+                'status.status' => 'required|in:pending,proccessed,ready,done',
             ]);
 
             DB::transaction(function () use ($no_transaction, $validated) {
