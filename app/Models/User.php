@@ -9,7 +9,7 @@ class User extends Authenticatable
 {
     use Notifiable;
 
-    protected $fillable = ['username', 'password'];
+    protected $fillable = ['username', 'password','role'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -17,4 +17,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(Transaction::class, 'users_id');
     }
+
+    public function deliveries()
+    {
+        return $this->hasMany(DeliveryList::class, 'kurir_id');
+    }
+
+    public function pickups()
+    {
+        return $this->hasMany(PickupList::class, 'kurir_id');
+    }
+
 }

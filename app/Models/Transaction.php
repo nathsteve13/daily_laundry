@@ -51,4 +51,14 @@ class Transaction extends Model
     {
         return $this->hasMany(Payment::class, 'no_transaction', 'no_transaction');
     }
+    public function deliveryLists()
+    {
+        return $this->hasMany(DeliveryList::class, 'no_transaction', 'no_transaction');
+    }
+
+    public function pickupLists()
+    {
+        return $this->hasMany(PickupList::class, 'no_transaction', 'no_transaction');
+    }
+
 }

@@ -20,4 +20,9 @@ class ServiceType extends Model
     {
         return $this->hasMany(TransactionDetail::class, 'service_type_id');
     }
+    public function orderRequests()
+    {
+        return $this->hasMany(OrderRequest::class);
+    }
+
 }
