@@ -36,6 +36,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/pengantaran/{id}/edit', [KurirController::class, 'edit'])->name('pengantaran.edit');
         Route::put('/pengantaran/{id}', [KurirController::class, 'update'])->name('pengantaran.update');
         Route::delete('/pengantaran/{id}', [KurirController::class, 'destroy'])->name('pengantaran.destroy');
+
+        Route::get('/pengambilan', [KurirController::class, 'pengambilanIndex'])->name('pengambilan.index');
+        Route::get('/pengambilan/create', [KurirController::class, 'pengambilanCreate'])->name('pengambilan.create');
+        Route::post('/pengambilan', [KurirController::class, 'pengambilanStore'])->name('pengambilan.store');
+        Route::get('/pengambilan/{id}/edit', [KurirController::class, 'pengambilanEdit'])->name('pengambilan.edit');
+        Route::put('/pengambilan/{id}', [KurirController::class, 'pengambilanUpdate'])->name('pengambilan.update');
+        Route::delete('/pengambilan/{id}', [KurirController::class, 'pengambilanDestroy'])->name('pengambilan.destroy');
     });
 
 });

@@ -41,6 +41,12 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('kurir.pengambilan.index') }}"
+                   class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
+                    <span class="flex-1">📥 Pengambilan</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('kurir.pengantaran.index') }}"
                    class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
                     <span class="flex-1">🚚 Pengantaran</span>
