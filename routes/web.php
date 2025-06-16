@@ -8,7 +8,7 @@ use App\Http\Controllers\ServiceTypeController;
 use App\Http\Controllers\TransactionController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('home');
 });
 
 Route::get('/dashboard', function () {
