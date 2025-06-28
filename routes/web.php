@@ -33,7 +33,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/pengantaran', [KurirController::class, 'index'])->name('pengantaran.index');
         Route::get('/pengantaran/create', [KurirController::class, 'create'])->name('pengantaran.create');
         Route::post('/pengantaran', [KurirController::class, 'store'])->name('pengantaran.store');
-        Route::get('/pengantaran/{id}/edit', [KurirController::class, 'edit'])->name('pengantaran.edit');
+        Route::get('/pengantaran/{no_delivery}/edit', [KurirController::class, 'edit'])->name('pengantaran.edit');
         Route::put('/pengantaran/{id}', [KurirController::class, 'update'])->name('pengantaran.update');
         Route::delete('/pengantaran/{id}', [KurirController::class, 'destroy'])->name('pengantaran.destroy');
 
@@ -44,7 +44,6 @@ Route::middleware('auth')->group(function () {
         Route::put('/pengambilan/{id}', [KurirController::class, 'pengambilanUpdate'])->name('pengambilan.update');
         Route::delete('/pengambilan/{id}', [KurirController::class, 'pengambilanDestroy'])->name('pengambilan.destroy');
     });
-
 });
 
 Route::resource('customers', CustomerController::class);
@@ -58,4 +57,4 @@ Route::resource('payments', PaymentController::class)
     ->parameters(['payments' => 'no_payment']);
 
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

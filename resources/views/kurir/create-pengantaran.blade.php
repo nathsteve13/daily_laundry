@@ -8,10 +8,7 @@
 
     <form action="{{ route('kurir.pengantaran.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
         @csrf
-        <div>
-            <label class="form-label">No Delivery</label>
-            <input type="number" name="no_delivery" class="form-control" required>
-        </div>
+        
         <div>
             <label class="form-label">No Transaksi</label>
             <select name="no_transaction" class="form-select" required>

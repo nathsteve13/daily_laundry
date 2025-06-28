@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Models\DeliveryList;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class KurirController extends Controller
@@ -28,76 +29,115 @@ class KurirController extends Controller
     public function store(Request $request)
     {
         try {
+            DB::beginTransaction();
             $data = $request->validate([
-                'no_delivery' => 'required|integer|unique:delivery_lists,no_delivery',
-                'no_transaction' => 'required|exists:transactions,no_transaction',
+                'no_transaction' => 'required',
                 'kurir_id' => 'required|exists:users,id',
                 'tanggal_diantar' => 'required|date',
                 'tanggal_terkirim' => 'required|date',
                 'bukti_terima' => 'nullable|file|mimes:jpg,png,jpeg|max:2048'
             ]);
 
+            $date = now()->format('Ymd');
+            $lastDelivery = DeliveryList::whereDate('created_at', now())->orderBy('no_delivery', 'desc')->first();
+
+            if ($lastDelivery) {
+                $lastIncrement = (int) substr($lastDelivery->no_delivery, -4);
+                $newIncrement = str_pad($lastIncrement + 1, 4, '0', STR_PAD_LEFT);
+            } else {
+                $newIncrement = '0001';
+            }
+
+            $data['no_delivery'] = 'DV-' . $date . '-' . $newIncrement;
+
             if ($request->hasFile('bukti_terima')) {
-                $data['bukti_terima'] = $request->file('bukti_terima')->store('bukti', 'public');
+                $filename = 'bukti/' . uniqid() . '.' . $request->file('bukti_terima')->getClientOriginalExtension();
+                $request->file('bukti_terima')->move(public_path('bukti'), $filename);
+                $data['bukti_terima'] = $filename;
             }
 
             DeliveryList::create($data);
+            DB::commit();
             return redirect()->route('kurir.pengantaran.index')->with('success', 'Pengantaran berhasil ditambahkan.');
         } catch (\Throwable $e) {
+            DB::rollBack();
+            dd($e->getMessage());
             report($e);
             return back()->withInput()->with('error', 'Gagal menyimpan data.');
         }
     }
 
-    public function edit($id)
+    public function edit($no_delivery)
     {
-        $delivery = DeliveryList::findOrFail($id);
+        $delivery = DeliveryList::where('no_delivery', $no_delivery)->firstOrFail();
+
         $transactions = Transaction::pluck('no_transaction');
         $kurirs = User::where('role', 'kurir')->get();
-        return view('kurir.edit', compact('delivery', 'transactions', 'kurirs'));
+        return view('kurir.edit-pengantaran', compact('delivery', 'transactions', 'kurirs'));
     }
 
     public function update(Request $request, $id)
     {
         try {
-            $delivery = DeliveryList::findOrFail($id);
-            $data = $request->validate([
-                'no_transaction' => 'required|exists:transactions,no_transaction',
-                'kurir_id' => 'required|exists:users,id',
-                'tanggal_diantar' => 'required|date',
+            $delivery = DeliveryList::where('no_delivery', $id)->firstOrFail();
+
+            $validated = $request->validate([
+                'no_transaction'   => 'required',
+                'kurir_id'         => 'required|exists:users,id',
+                'tanggal_diantar'  => 'required|date',
                 'tanggal_terkirim' => 'required|date',
-                'bukti_terima' => 'nullable|file|mimes:jpg,png,jpeg|max:2048'
+                'bukti_terima'     => 'nullable|file|mimes:jpg,jpeg,png|max:40000',
             ]);
+            
 
             if ($request->hasFile('bukti_terima')) {
-                if ($delivery->bukti_terima) {
-                    Storage::disk('public')->delete($delivery->bukti_terima);
+                // Hapus file lama jika ada
+                if (!empty($delivery->bukti_terima)) {
+                    $oldFile = public_path($delivery->bukti_terima);
+                    if (file_exists($oldFile)) {
+                        unlink($oldFile);
+                    }
                 }
-                $data['bukti_terima'] = $request->file('bukti_terima')->store('bukti', 'public');
+
+                // Simpan file baru ke public/bukti
+                $filename = 'bukti/' . uniqid() . '.' . $request->file('bukti_terima')->getClientOriginalExtension();
+                $request->file('bukti_terima')->move(public_path('bukti'), $filename);
+                $validated['bukti_terima'] = $filename;
             }
 
-            $delivery->update($data);
+            $delivery->update($validated);
+
             return redirect()->route('kurir.pengantaran.index')->with('success', 'Data berhasil diperbarui.');
         } catch (\Throwable $e) {
-            report($e);
+            Log::error($e->getMessage());
             return back()->withInput()->with('error', 'Gagal memperbarui data.');
         }
     }
 
+
     public function destroy($id)
     {
         try {
-            $delivery = DeliveryList::findOrFail($id);
+            $delivery = DeliveryList::where('no_delivery', $id)->firstOrFail();
+
             if ($delivery->bukti_terima) {
-                Storage::disk('public')->delete($delivery->bukti_terima);
+                $filePath = public_path($delivery->bukti_terima);
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
             }
+
             $delivery->delete();
+
             return redirect()->route('kurir.pengantaran.index')->with('success', 'Data berhasil dihapus.');
         } catch (\Throwable $e) {
+            dd($e->getMessage());
             report($e);
             return back()->with('error', 'Gagal menghapus data.');
         }
     }
+
+
 
 
     public function pengambilanIndex()

@@ -7,8 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class DeliveryList extends Model
 {
     protected $table = 'delivery_lists';
-    protected $primaryKey = ['no_delivery', 'no_transaction'];
+    protected $primaryKey = 'no_delivery';
+    protected $keyType = 'string';
     public $incrementing = false;
+
     public $timestamps = true;
 
     protected $fillable = [

@@ -31,7 +31,6 @@
                     <th>Kurir</th>
                     <th>Tanggal Diantar</th>
                     <th>Tanggal Terkirim</th>
-                    <th>Bukti Terima</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -43,13 +42,7 @@
                     <td>{{ $d->kurir->username ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($d->tanggal_diantar)->format('d/m/Y H:i') }}</td>
                     <td>{{ \Carbon\Carbon::parse($d->tanggal_terkirim)->format('d/m/Y H:i') }}</td>
-                    <td>
-                        @if($d->bukti_terima)
-                            <a href="{{ asset('storage/bukti/' . $d->bukti_terima) }}" target="_blank">📎 Bukti</a>
-                        @else
-                            <span class="text-muted">-</span>
-                        @endif
-                    </td>
+
                     <td class="text-end d-flex gap-2 justify-end">
                         <a href="{{ route('kurir.pengantaran.edit', $d->no_delivery) }}" class="btn btn-outline-dark btn-sm notion-btn">Edit</a>
                         <form action="{{ route('kurir.pengantaran.destroy', $d->no_delivery) }}" method="POST">
