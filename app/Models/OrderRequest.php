@@ -31,4 +31,16 @@ class OrderRequest extends Model
     {
         return $this->hasMany(OrderRequestDetail::class, 'order_request_no_order', 'no_order');
     }
+
+    public function getDetailsAttribute()
+    {
+        return $this->details()->with('serviceType')->get()->map(function ($d) {
+            return [
+                'service_type_id' => $d->service_type_id,
+                'service_type_name' => $d->serviceType->name ?? '-',
+                'estimated_value' => $d->estimated_value,
+                'price' => $d->serviceType->price ?? 0,
+            ];
+        });
+    }
 }

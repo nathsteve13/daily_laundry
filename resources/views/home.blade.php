@@ -13,9 +13,9 @@
                         <div class="hero__caption">
                             <h1 data-animation="fadeInLeft" data-delay="0.2s">Fast & Reliable Laundry Service</h1>
                             <p data-animation="fadeInLeft" data-delay="0.4s">Clean clothes, hassle-free.</p>
-                            <a href="#services" class="btn hero-btn" data-animation="fadeInLeft" data-delay="0.7s">Explore Services</a>
+                            <a href="{{ route('pesan.create') }}" class="btn hero-btn">Buat Pesanan</a>
                         </div>
-                    </div>  
+                    </div>
                 </div>
             </div>
         </div>
