@@ -20,7 +20,7 @@
         @csrf
         <div class="form-group">
             <label for="no_transaction">No. Transaksi</label>
-            <select name="transactions_id" id="no_transaction" class="form-control" required>
+            <select name="no_transaction" id="no_transaction" class="form-control" required>
                 <option value="">-- Pilih Transaksi --</option>
                 @foreach($transactions as $trx)
                     <option value="{{ $trx }}">{{ $trx }}</option>
@@ -31,22 +31,22 @@
 
         <div class="form-group">
             <label for="kurir">Kurir</label>
-            <select name="kurirs_id" id="kurir" class="form-control" required>
+            <select name="kurir_id" id="kurir" class="form-control" required>
                 <option value="">-- Pilih Kurir --</option>
                 @foreach($kurirs as $k)
-                    <option value="{{ $k->id }}">{{ $k->name }}</option>
+                    <option value="{{ $k->id }}">{{ $k->username }}</option>
                 @endforeach
             </select>
         </div>
 
         <div class="form-group">
-            <label for="tanggal_diambil">Tanggal Diambil</label>
-            <input type="datetime-local" name="tanggal_diambil" class="form-control" required>
+            <label for="tanggal_pengambilan">Tanggal Pengambilan</label>
+            <input type="datetime-local" name="tanggal_pengambilan" class="form-control" required>
         </div>
 
         <div class="form-group">
-            <label for="tanggal_sampai">Tanggal Sampai</label>
-            <input type="datetime-local" name="tanggal_sampai" class="form-control" required>
+            <label for="tanggal_diambil">Tanggal Diambil</label>
+            <input type="datetime-local" name="tanggal_diambil" class="form-control" required>
         </div>
 
         <div class="form-group">

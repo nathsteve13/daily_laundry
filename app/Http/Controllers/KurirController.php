@@ -115,35 +115,50 @@ class KurirController extends Controller
 
     public function pengambilanStore(Request $request)
     {
-        $request->validate([
-            'no_pickup' => 'required|numeric|unique:pickup_lists,no_pickup',
-            'no_transaction' => 'required|exists:transactions,no_transaction',
-            'kurir_id' => 'required|exists:users,id',
-            'tanggal_diambil' => 'required|date',
-            'tanggal_sampai' => 'required|date|after_or_equal:tanggal_diambil',
-            'bukti_ambil' => 'nullable|image|max:2048'
-        ]);
-
         try {
+
+            $request->validate([
+                'no_transaction' => 'required',
+                'kurir_id' => 'required|exists:users,id',
+                'tanggal_pengambilan' => 'required',
+                'tanggal_diambil' => 'required',
+                'bukti_ambil' => 'nullable|image|max:40000'
+            ]);
             DB::beginTransaction();
             $filename = null;
 
             if ($request->hasFile('bukti_ambil')) {
-                $filename = $request->file('bukti_ambil')->store('pickup', 'public');
+                $filename = 'pickup/' . uniqid() . '.' . $request->file('bukti_ambil')->getClientOriginalExtension();
+                $request->file('bukti_ambil')->move(public_path('pickup'), $filename);
+            } else {
+                $filename = null;
             }
+
+            $date = now()->format('Ymd');
+            $lastPickup = PickupList::whereDate('created_at', now())->orderBy('no_pickup', 'desc')->first();
+
+            if ($lastPickup) {
+                $lastIncrement = (int) substr($lastPickup->no_pickup, -4);
+                $newIncrement = str_pad($lastIncrement + 1, 4, '0', STR_PAD_LEFT);
+            } else {
+                $newIncrement = '0001';
+            }
+
+            $request->merge(['no_pickup' => 'PU-' . $date . '-' . $newIncrement]);
 
             PickupList::create([
                 'no_pickup' => $request->no_pickup,
                 'no_transaction' => $request->no_transaction,
                 'kurir_id' => $request->kurir_id,
+                'tanggal_pengambilan' => $request->tanggal_pengambilan,
                 'tanggal_diambil' => $request->tanggal_diambil,
-                'tanggal_sampai' => $request->tanggal_sampai,
-                'bukti_ambil' => $filename
+                'bukti_pengambilan' => $filename
             ]);
 
             DB::commit();
-            return redirect()->route('kurir.pengambilan')->with('success', 'Data berhasil disimpan.');
+            return redirect()->route('kurir.pengambilan.index')->with('success', 'Data berhasil disimpan.');
         } catch (\Throwable $e) {
+            dd($e->getMessage());
             DB::rollBack();
             report($e);
             return back()->with('error', 'Gagal menyimpan data.')->withInput();
@@ -152,45 +167,56 @@ class KurirController extends Controller
 
     public function pengambilanEdit($id)
     {
-        $delivery = PickupList::findOrFail($id);
+        $pengambilan = PickupList::findOrFail($id);
         $transactions = Transaction::pluck('no_transaction');
         $kurirs = User::where('role', 'kurir')->get();
-        return view('kurir.edit-pengambilan', compact('delivery', 'transactions', 'kurirs'));
+        return view('kurir.edit-pengambilan', compact('pengambilan', 'transactions', 'kurirs'));
     }
 
     public function pengambilanUpdate(Request $request, $id)
     {
-        $request->validate([
-            'no_transaction' => 'required|exists:transactions,no_transaction',
-            'kurir_id' => 'required|exists:users,id',
-            'tanggal_diambil' => 'required|date',
-            'tanggal_sampai' => 'required|date|after_or_equal:tanggal_diambil',
-            'bukti_ambil' => 'nullable|image|max:2048'
-        ]);
-
         try {
+            $request->validate([
+                'no_transaction' => 'required',
+                'kurir_id' => 'required|exists:users,id',
+                'tanggal_pengambilan' => 'required|date',
+                'tanggal_diambil' => 'required|date',
+                'bukti_ambil' => 'nullable|image|max:2048',
+            ]);
+
             DB::beginTransaction();
+
             $pickup = PickupList::findOrFail($id);
 
             if ($request->hasFile('bukti_ambil')) {
-                $pickup->bukti_ambil = $request->file('bukti_ambil')->store('pickup', 'public');
+                // Hapus file lama jika ada
+                if ($pickup->bukti_pengambilan && file_exists(public_path($pickup->bukti_pengambilan))) {
+                    unlink(public_path($pickup->bukti_pengambilan));
+                }
+
+                $filename = 'pickup/' . uniqid() . '.' . $request->file('bukti_ambil')->getClientOriginalExtension();
+                $request->file('bukti_ambil')->move(public_path('pickup'), $filename);
+
+                $pickup->bukti_pengambilan = $filename;
             }
 
             $pickup->update([
                 'no_transaction' => $request->no_transaction,
                 'kurir_id' => $request->kurir_id,
+                'tanggal_pengambilan' => $request->tanggal_pengambilan,
                 'tanggal_diambil' => $request->tanggal_diambil,
-                'tanggal_sampai' => $request->tanggal_sampai,
             ]);
 
             DB::commit();
-            return redirect()->route('kurir.pengambilan')->with('success', 'Data berhasil diperbarui.');
+            return redirect()->route('kurir.pengambilan.index')->with('success', 'Data berhasil diperbarui.');
         } catch (\Throwable $e) {
+            dd($e->getMessage());
             DB::rollBack();
             report($e);
             return back()->with('error', 'Gagal mengupdate data.')->withInput();
         }
     }
+
 
     public function pengambilanDestroy($id)
     {
@@ -203,5 +229,4 @@ class KurirController extends Controller
             return back()->with('error', 'Gagal menghapus data.');
         }
     }
-
 }
