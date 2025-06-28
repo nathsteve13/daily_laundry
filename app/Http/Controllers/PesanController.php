@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\OrderRequest;
 use App\Models\ServiceType;
+use App\Models\OrderRequest;
+use Illuminate\Http\Request;
+use App\Models\OrderRequestDetail;
 use Illuminate\Support\Facades\DB;
 
 class PesanController extends Controller
@@ -27,9 +28,10 @@ class PesanController extends Controller
                 'name' => 'required|string|max:100',
                 'address' => 'required|string',
                 'phone_number' => 'required|string|max:20',
-                'estimated_value' => 'required|numeric',
-                'service_type_id' => 'required|exists:service_type,id',
                 'delivery_type' => 'required|in:ambil-kirim,kirim',
+                'details' => 'required|array|min:1',
+                'details.*.service_type_id' => 'required|exists:service_type,id',
+                'details.*.estimated_value' => 'required|numeric|min:0.1',
             ]);
 
             DB::beginTransaction();
@@ -43,19 +45,25 @@ class PesanController extends Controller
                 'name' => $validated['name'],
                 'address' => $validated['address'],
                 'phone_number' => $validated['phone_number'],
-                'estimated_value' => $validated['estimated_value'],
-                'service_type_id' => $validated['service_type_id'],
                 'delivery_type' => $validated['delivery_type'],
                 'status' => 'diterima',
             ]);
+
+            foreach ($validated['details'] as $item) {
+                OrderRequestDetail::create([
+                    'order_request_no_order' => $noOrder,
+                    'service_type_id' => $item['service_type_id'],
+                    'estimated_value' => $item['estimated_value'],
+                ]);
+            }
 
             DB::commit();
             return redirect()->route('pesan.create')->with('success', 'Pesanan berhasil dikirim.');
         } catch (\Throwable $e) {
             DB::rollBack();
+            dd($e->getMessage()); // For debugging purposes, remove in production
             report($e);
             return back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan pesanan.');
         }
     }
-
 }

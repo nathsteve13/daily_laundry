@@ -3,7 +3,9 @@
         <div class="main-header header-sticky">
             <div class="header-left">
                 <div class="logo">
-                    <a href="{{ url('/') }}"><img src="{{ asset('assets/img/logo/logo.png') }}" alt=""></a>
+                    <a href="{{ url('/') }}">
+                        <img src="{{ asset('assets/img/logo/logo_putih.jpg') }}" alt="" style="max-width: 80px; height: auto;">
+                    </a>
                 </div>
                 <div class="menu-wrapper d-flex align-items-center">
                     <div class="main-menu d-none d-lg-block">

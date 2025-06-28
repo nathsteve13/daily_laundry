@@ -17,8 +17,6 @@ class OrderRequest extends Model
         'status',
         'address',
         'phone_number',
-        'estimated_value',
-        'service_type_id',
         'delivery_type',
         'created_at',
         'updated_at',
@@ -27,5 +25,10 @@ class OrderRequest extends Model
     public function serviceType()
     {
         return $this->belongsTo(ServiceType::class);
+    }
+
+    public function details()
+    {
+        return $this->hasMany(OrderRequestDetail::class, 'order_request_no_order', 'no_order');
     }
 }
