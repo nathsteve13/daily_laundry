@@ -44,7 +44,7 @@
                     <td>{{ \Carbon\Carbon::parse($d->tanggal_terkirim)->format('d/m/Y H:i') }}</td>
 
                     <td class="text-end d-flex gap-2 justify-end">
-                        <a href="{{ route('kurir.pengantaran.edit', $d->no_delivery) }}" class="btn btn-outline-dark btn-sm notion-btn">Edit</a>
+                        <a href="{{ route('kurir.pengantaran.edit', $d->no_delivery) }}" class="btn btn-outline-dark btn-sm notion-btn">Finish</a>
                         <form action="{{ route('kurir.pengantaran.destroy', $d->no_delivery) }}" method="POST">
                             @csrf @method('DELETE')
                             <button class="btn btn-outline-dark btn-sm notion-btn" onclick="return confirm('Hapus pengantaran ini?')">Delete</button>

@@ -23,21 +23,15 @@
 
             <div class="form-group">
                 <label for="no_transaction">No. Transaksi</label>
-                <select name="no_transaction_display" id="no_transaction" class="form-control" disabled>
-                    <option value="{{ $pengambilan->no_transaction }}" selected>{{ $pengambilan->no_transaction }}</option>
-                </select>
+                <input type="text" class="form-control bg-light" value="{{ $pengambilan->no_transaction }}" readonly>
                 <input type="hidden" name="no_transaction" value="{{ $pengambilan->no_transaction }}">
             </div>
 
-
             <div class="form-group">
                 <label for="kurir">Kurir</label>
-                <select name="kurir_id" id="kurir" class="form-control" required>
-                    @foreach ($kurirs as $k)
-                        <option value="{{ $k->id }}" {{ $pengambilan->kurir_id == $k->id ? 'selected' : '' }}>
-                            {{ $k->username }}</option>
-                    @endforeach
-                </select>
+                <input type="text" class="form-control bg-light" value="{{ $pengambilan->kurir->username ?? '-' }}"
+                    readonly>
+                <input type="hidden" name="kurir_id" value="{{ $pengambilan->kurir_id }}">
             </div>
 
 

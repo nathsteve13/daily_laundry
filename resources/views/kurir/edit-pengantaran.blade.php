@@ -11,22 +11,17 @@
             @csrf @method('PUT')
             <div>
                 <label class="form-label">No Transaksi</label>
-                <select name="no_transaction" class="form-select" required>
-                    @foreach ($transactions as $trx)
-                        <option value="{{ $trx }}" {{ $delivery->no_transaction == $trx ? 'selected' : '' }}>
-                            {{ $trx }}</option>
-                    @endforeach
-                </select>
+                <input type="text" class="form-control bg-light" value="{{ $delivery->no_transaction }}" readonly>
+                <input type="hidden" name="no_transaction" value="{{ $delivery->no_transaction }}">
             </div>
+
             <div>
                 <label class="form-label">Kurir</label>
-                <select name="kurir_id" class="form-select" required>
-                    @foreach ($kurirs as $k)
-                        <option value="{{ $k->id }}" {{ $delivery->kurir_id == $k->id ? 'selected' : '' }}>
-                            {{ $k->username }}</option>
-                    @endforeach
-                </select>
+                <input type="text" class="form-control bg-light" value="{{ $delivery->kurir->username ?? '-' }}"
+                    readonly>
+                <input type="hidden" name="kurir_id" value="{{ $delivery->kurir_id }}">
             </div>
+
             <div>
                 <label class="form-label">Tanggal Diantar</label>
                 <input type="datetime-local" name="tanggal_diantar" class="form-control"

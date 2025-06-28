@@ -38,7 +38,7 @@
                             <td>{{ date('d/m/Y H:i', strtotime($row->tanggal_diambil)) }}</td>
 
                             <td>
-                                <a href="{{ route('kurir.pengambilan.edit', $row->no_pickup) }}" class="btn btn-outline-dark btn-sm notion-btn">Edit</a>
+                                <a href="{{ route('kurir.pengambilan.edit', $row->no_pickup) }}" class="btn btn-outline-dark btn-sm notion-btn">Finish</a>
                                 <form action="{{ route('kurir.pengambilan.destroy', $row->no_pickup) }}" method="POST" style="display: inline;">
                                     @csrf @method('DELETE')
                                     <button class="btn btn-outline-dark btn-sm notion-btn" onclick="return confirm('Hapus data ini?')">Hapus</button>
