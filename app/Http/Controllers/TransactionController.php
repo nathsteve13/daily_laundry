@@ -2,25 +2,109 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transaction;
+use App\Models\User;
 use App\Models\Customer;
+use App\Models\PickupList;
 use App\Models\ServiceType;
+use App\Models\Transaction;
+use App\Models\DeliveryList;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Models\TransactionStatus;
+use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $transactions = Transaction::with(['customers', 'details', 'status'])->get();
-            return view('transaction.index', compact('transactions'));
-        } catch (\Exception $e) {
-            return back()->with('error', 'Failed to load transactions');
+            $query = Transaction::with(['transactionStatus', 'customers']);
+
+            if ($request->filled('status')) {
+                $query->whereHas('transactionStatus', function ($q) use ($request) {
+                    $q->where('status', $request->status);
+                });
+            }
+
+            if ($request->filled('search')) {
+                $query->whereHas('customers', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->search . '%');
+                });
+            }
+
+            if ($request->filled('sort') && in_array($request->sort, ['asc', 'desc'])) {
+                $query->orderBy('created_at', $request->sort);
+            } else {
+                $query->latest();
+            }
+
+            $transactions = $query->get();
+            $kurirs = User::where('role', 'kurir')->get();
+
+            return view('transaction.index', compact('transactions', 'kurirs'));
+        } catch (\Throwable $e) {
+            dd($e->getMessage());
+            report($e);
+            return back()->with('error', 'Gagal memuat data transaksi.');
         }
     }
 
+
+
+    public function assignKurir(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'no_transaction'        => 'required|exists:transactions,no_transaction',
+                'kurir_id'              => 'required|exists:users,id',
+                'jenis'                 => 'required|in:ambil,terima',
+                'tanggal_pengambilan'   => 'nullable|date',
+                'tanggal_pengiriman'    => 'nullable|date',
+            ]);
+
+            if ($validated['jenis'] === 'ambil') {
+                // Simpan ke PickupList
+                $date = now()->format('Ymd');
+                $last = PickupList::whereDate('created_at', now())->orderBy('no_pickup', 'desc')->first();
+                $increment = $last ? str_pad((int) substr($last->no_pickup, -4) + 1, 4, '0', STR_PAD_LEFT) : '0001';
+                $noPickup = 'PU-' . $date . '-' . $increment;
+
+                PickupList::create([
+                    'no_pickup'           => $noPickup,
+                    'no_transaction'      => $validated['no_transaction'],
+                    'kurir_id'            => $validated['kurir_id'],
+                    'tanggal_pengambilan' => $validated['tanggal_pengambilan'] ?? now(),
+                    'tanggal_diambil'     => $validated['tanggal_pengambilan'] ?? now(), // bisa ubah sesuai alurmu
+                    'bukti_pengambilan'   => null
+                ]);
+            } elseif ($validated['jenis'] === 'terima') {
+                // Simpan ke DeliveryList
+                $date = now()->format('Ymd');
+                $last = DeliveryList::whereDate('created_at', now())->orderBy('no_delivery', 'desc')->first();
+                $increment = $last ? str_pad((int) substr($last->no_delivery, -4) + 1, 4, '0', STR_PAD_LEFT) : '0001';
+                $noDelivery = 'DV-' . $date . '-' . $increment;
+
+                DeliveryList::create([
+                    'no_delivery'      => $noDelivery,
+                    'no_transaction'   => $validated['no_transaction'],
+                    'kurir_id'         => $validated['kurir_id'],
+                    'tanggal_diantar'  => $validated['tanggal_pengiriman'] ?? now(),
+                    'tanggal_terkirim' => $validated['tanggal_pengiriman'] ?? now(),
+                    'bukti_terima'     => null
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kurir berhasil di-assign.'
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function updateStatus(Request $request)
     {
@@ -40,7 +124,7 @@ class TransactionController extends Controller
             return response()->json([
                 'success' => true,
                 'status' => ucfirst($status->status),
-                'badge' => match($status->status) {
+                'badge' => match ($status->status) {
                     'pending' => 'secondary',
                     'pickup' => 'warning',
                     'proccessed' => 'info',
