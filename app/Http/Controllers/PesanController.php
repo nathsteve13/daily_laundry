@@ -61,7 +61,7 @@ class PesanController extends Controller
             return redirect()->route('pesan.create')->with('success', 'Pesanan berhasil dikirim.');
         } catch (\Throwable $e) {
             DB::rollBack();
-            dd($e->getMessage()); // For debugging purposes, remove in production
+            dd($e->getMessage());
             report($e);
             return back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan pesanan.');
         }
