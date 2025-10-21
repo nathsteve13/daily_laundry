@@ -22,8 +22,6 @@
                             <ul>
                                 <li><a href="#">- Dry Cleaning</a></li>
                                 <li><a href="#">- Ironing Services</a></li>
-                                <li><a href="#">- Laundry App</a></li>
-                                <li><a href="#">- Laundry Service London</a></li>
                             </ul>
                         </div>
                     </div>

@@ -30,7 +30,7 @@
 
                         <div class="mb-3">
                             <label for="phone_number" class="form-label">Nomor Telepon</label>
-                            <input type="text" name="phone_number" id="phone_number" class="form-control" required>
+                            <input type="tel" name="phone_number" id="phone_number" class="form-control" pattern="0[0-9]{9,14}" required placeholder="Masukkan nomor telepon (10-15 digit)" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
                         </div>
 
                         <div class="mb-4">
@@ -51,22 +51,22 @@
                                             <option value="">-- Pilih Layanan --</option>
                                             @foreach ($serviceTypes as $type)
                                                 <option value="{{ $type->id }}">
-                                                    {{ $type->name }} - {{ number_format($type->price, 0) }} /
-                                                    {{ $type->unit }}
+                                                    {{ $type->name }} - {{ number_format($type->price, 0) }} / {{ $type->unit }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="mb-2">
                                         <label class="form-label">Estimasi Berat / Kuantitas</label>
-                                        <input type="number" name="details[0][estimated_value]" class="form-control"
-                                            step="0.01" required>
+                                        <div class="input-group">
+                                            <input type="number" name="details[0][estimated_value]" class="form-control" step="0.01" required>
+                                            <span class="input-group-text">kg</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <button type="button" id="add-layanan" class="btn btn-outline-secondary mb-3">Tambah
-                                Layanan</button>
+                            <button type="button" id="add-layanan" class="btn btn-outline-secondary mb-3">Tambah Layanan</button>
                         </div>
 
                         <div class="d-grid mt-4">
@@ -78,24 +78,43 @@
         </div>
     </section>
 @endsection
+
 @push('scripts')
     <script>
         let index = 1;
+
         document.getElementById('add-layanan').onclick = function() {
             const container = document.getElementById('layanan-container');
             const original = container.querySelector('.layanan-item');
             const clone = original.cloneNode(true);
 
+            // Update name attributes for form elements
             clone.querySelectorAll('select, input').forEach(input => {
                 const name = input.getAttribute('name');
                 const newName = name.replace(/\[\d+\]/, `[${index}]`);
                 input.setAttribute('name', newName);
-                input.removeAttribute('style'); // fix critical error: select not focusable
-                input.value = '';
+                input.value = ''; // Clear the values
             });
 
+            // Add "Hapus" button for all items except the first one
+            if (index > 0) {
+                const removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.className = 'btn btn-danger btn-sm remove-layanan';
+                removeButton.textContent = 'Hapus';
+                clone.appendChild(removeButton);
+            }
+
+            // Append the cloned item
             container.appendChild(clone);
             index++;
         };
+
+        // Event delegation for remove button
+        document.getElementById('layanan-container').addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-layanan')) {
+                event.target.closest('.layanan-item').remove();
+            }
+        });
     </script>
 @endpush
