@@ -31,21 +31,29 @@
 
     <div class="p-6 space-y-6">
         <div class="bg-light p-4 rounded mb-3">
-            <form id="orderClientFilter" class="d-flex gap-2" onsubmit="return false;">
+            <form id="orderClientFilter" class="d-flex gap-2 flex-wrap" onsubmit="return false;">
                 <select id="orderStatus" class="form-select">
                     <option value="">Semua Status</option>
                     @foreach ($statusOptions as $s)
                         <option value="{{ strtolower($s) }}">{{ ucfirst($s) }}</option>
                     @endforeach
                 </select>
+
+                <input id="orderFrom" type="datetime-local" class="form-control" style="max-width:220px">
+                <input id="orderTo" type="datetime-local" class="form-control" style="max-width:220px">
+
                 <select id="orderSort" class="form-select">
                     <option value="">Urutkan</option>
                     <option value="asc">Terlama</option>
                     <option value="desc">Terbaru</option>
                 </select>
+
+                <button type="button" class="btn btn-primary" onclick="applyOrderFilters()">Terapkan</button>
                 <button type="button" class="btn btn-secondary" onclick="resetOrderFilters()">Reset</button>
+                <button type="button" class="btn btn-success" onclick="exportOrdersToCSV()">Ekspor Excel</button>
             </form>
         </div>
+
 
         <div class="flex items-center justify-between mb-4">
             <h1 class="text-3xl font-semibold text-gray-800">📦 Daftar Pesanan</h1>
@@ -138,6 +146,118 @@
 @endphp
 
 @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.getElementById('ordersTable');
+            const tbody = table?.querySelector('tbody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const els = {
+                st: document.getElementById('orderStatus'),
+                so: document.getElementById('orderSort'),
+                df: document.getElementById('orderFrom'),
+                dt: document.getElementById('orderTo'),
+            };
+
+            function toTsLocal(val) {
+                if (!val) return null;
+                const d = new Date(val);
+                if (isNaN(d.getTime())) return null;
+                return Math.floor(d.getTime() / 1000);
+            }
+
+            function sortVisible(visible, dir) {
+                visible.sort((a, b) => {
+                    const ta = parseInt(a.dataset.created || '0', 10);
+                    const tb = parseInt(b.dataset.created || '0', 10);
+                    return dir === 'asc' ? ta - tb : tb - ta;
+                });
+                visible.forEach(tr => tbody.appendChild(tr));
+            }
+
+            window.applyOrderFilters = function() {
+                const st = (els.st?.value || '').trim().toLowerCase();
+                const so = els.so?.value || '';
+                const from = toTsLocal(els.df?.value || '');
+                const to = toTsLocal(els.dt?.value || '');
+
+                rows.forEach(tr => {
+                    const status = (tr.dataset.status || '').toLowerCase();
+                    const created = parseInt(tr.dataset.created || '0', 10);
+
+                    const matchStatus = !st || status === st;
+                    const afterFrom = !from || created >= from;
+                    const beforeTo = !to || created <= to;
+
+                    tr.style.display = (matchStatus && afterFrom && beforeTo) ? '' : 'none';
+                });
+
+                if (so === 'asc' || so === 'desc') {
+                    const visible = rows.filter(tr => tr.style.display !== 'none');
+                    sortVisible(visible, so);
+                }
+            };
+
+            window.resetOrderFilters = function() {
+                if (els.st) els.st.value = '';
+                if (els.so) els.so.value = '';
+                if (els.df) els.df.value = '';
+                if (els.dt) els.dt.value = '';
+                rows.forEach(tr => tr.style.display = '');
+            };
+
+            window.exportOrdersToCSV = function() {
+                const visibleRows = rows.filter(tr => tr.style.display !== 'none');
+                if (!visibleRows.length) {
+                    alert('Tidak ada data untuk diekspor');
+                    return;
+                }
+
+                const headers = Array.from(table.querySelectorAll('thead th'))
+                    .map(th => th.textContent.trim())
+                    .filter(h => h.toLowerCase() !== 'aksi');
+
+                const lines = [];
+                lines.push(headers.join(','));
+
+                visibleRows.forEach(tr => {
+                    const tds = Array.from(tr.querySelectorAll('td'));
+                    const cells = tds.slice(0, tds.length - 1).map(td => {
+                        let txt = td.innerText.replace(/\r?\n|\r/g, ' ').trim();
+                        if (txt.includes(',') || txt.includes('"')) {
+                            txt = '"' + txt.replace(/"/g, '""') + '"';
+                        }
+                        return txt;
+                    });
+                    lines.push(cells.join(','));
+                });
+
+                const csvContent = '\uFEFF' + lines.join('\n');
+                const blob = new Blob([csvContent], {
+                    type: 'text/csv;charset=utf-8;'
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                a.href = url;
+                a.download =
+                    `orders_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            ['change', 'input'].forEach(evt => {
+                els.st?.addEventListener(evt, applyOrderFilters);
+                els.so?.addEventListener(evt, applyOrderFilters);
+                els.df?.addEventListener(evt, applyOrderFilters);
+                els.dt?.addEventListener(evt, applyOrderFilters);
+            });
+        });
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const tbody = document.querySelector('#ordersTable tbody');

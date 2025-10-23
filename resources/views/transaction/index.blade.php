@@ -25,27 +25,29 @@
     @endif
 
     <div class="p-6 space-y-6">
-        <div class="bg-light p-4 rounded">
-            <form method="GET" class="d-flex gap-2 mb-4">
-                <input type="text" name="search" class="form-control" placeholder="Cari nama customer..."
-                    value="{{ request('search') }}">
-                <select name="status" class="form-select">
+        <div class="bg-light p-4 rounded mb-3">
+            <form id="trxClientFilter" class="d-flex gap-2 flex-wrap" onsubmit="return false;">
+                <input id="trxSearch" type="text" class="form-control" placeholder="Cari nama customer…"
+                    style="max-width:240px">
+                <select id="trxStatus" class="form-select" style="max-width:200px">
                     <option value="">Semua Status</option>
                     @foreach (['pending', 'pickup', 'proccessed', 'ready', 'delivered', 'done'] as $s)
-                        <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>
-                            {{ ucfirst($s) }}
-                        </option>
+                        <option value="{{ $s }}">{{ ucfirst($s) }}</option>
                     @endforeach
                 </select>
-                <select name="sort" class="form-select">
+                <input id="dateFrom" type="datetime-local" class="form-control" style="max-width:220px">
+                <input id="dateTo" type="datetime-local" class="form-control" style="max-width:220px">
+                <select id="trxSort" class="form-select" style="max-width:200px">
                     <option value="">Urutkan</option>
-                    <option value="asc" {{ request('sort') === 'asc' ? 'selected' : '' }}>Terlama</option>
-                    <option value="desc" {{ request('sort') === 'desc' ? 'selected' : '' }}>Terbaru</option>
+                    <option value="asc">Terlama</option>
+                    <option value="desc">Terbaru</option>
                 </select>
-                <button class="btn btn-primary">Terapkan</button>
-                <a href="{{ route('transactions.index') }}" class="btn btn-secondary">Reset</a>
+                <button type="button" class="btn btn-primary" onclick="applyTrxFilters()">Terapkan</button>
+                <button type="button" class="btn btn-secondary" onclick="resetTrxFilters()">Reset</button>
+                <button type="button" class="btn btn-success" onclick="exportFilteredToCSV()">Ekspor Excel</button>
             </form>
         </div>
+
         <div class="flex items-center justify-between mb-4">
 
             <h1 class="text-3xl font-semibold text-gray-800">🔄 Transaction List</h1>
@@ -55,7 +57,7 @@
 
 
         <div class="bg-white notion-box overflow-hidden">
-            <table class="table align-middle mb-0 table-hover text-nowrap w-full">
+            <table id="transactionsTable" class="table align-middle mb-0 table-hover text-nowrap w-full">
                 <thead class="bg-light">
                     <tr class="text-muted text-uppercase small text-center">
                         <th>No. Transaction</th>
@@ -70,7 +72,12 @@
                 </thead>
                 <tbody>
                     @foreach ($transactions as $t)
-                        <tr class="text-center">
+                        @php
+                            $latestStatus = $t->transactionStatus->sortByDesc('created_at')->first();
+                        @endphp
+                        <tr class="text-center" data-created="{{ $t->created_at->timestamp }}"
+                            data-customer="{{ strtolower(optional($t->customers->first())->name ?? '') }}"
+                            data-status="{{ strtolower($latestStatus?->status ?? 'unknown') }}">
                             <td>{{ $t->no_transaction }}</td>
                             <td>
                                 @if ($t->customers && $t->customers->isNotEmpty())
@@ -153,11 +160,13 @@
                                 </div>
                                 <div class="mb-3" id="tanggal_ambil_group" style="display: none;">
                                     <label class="form-label">Tanggal Pengambilan</label>
-                                    <input type="datetime-local" name="tanggal_pengambilan" class="form-control" min="{{ date('Y-m-d\TH:i') }}">
+                                    <input type="datetime-local" name="tanggal_pengambilan" class="form-control"
+                                        min="{{ date('Y-m-d\TH:i') }}">
                                 </div>
                                 <div class="mb-3" id="tanggal_kirim_group" style="display: none;">
                                     <label class="form-label">Tanggal Pengiriman</label>
-                                    <input type="datetime-local" name="tanggal_pengiriman" class="form-control" min="{{ date('Y-m-d\TH:i') }}">
+                                    <input type="datetime-local" name="tanggal_pengiriman" class="form-control"
+                                        min="{{ date('Y-m-d\TH:i') }}">
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -213,6 +222,131 @@
     </style>
 @endpush
 @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.getElementById('transactionsTable');
+            const tbody = table?.querySelector('tbody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const els = {
+                q: document.getElementById('trxSearch'),
+                st: document.getElementById('trxStatus'),
+                df: document.getElementById('dateFrom'),
+                dt: document.getElementById('dateTo'),
+                so: document.getElementById('trxSort'),
+            };
+
+            function toTsLocal(val) {
+                if (!val) return null;
+                const d = new Date(val);
+                if (isNaN(d.getTime())) return null;
+                return Math.floor(d.getTime() / 1000);
+            }
+
+            function applySort(visible, dir) {
+                visible.sort((a, b) => {
+                    const ta = parseInt(a.dataset.created || '0', 10);
+                    const tb = parseInt(b.dataset.created || '0', 10);
+                    return dir === 'asc' ? ta - tb : tb - ta;
+                });
+                visible.forEach(tr => tbody.appendChild(tr));
+            }
+
+            window.applyTrxFilters = function() {
+                const q = (els.q?.value || '').trim().toLowerCase();
+                const st = (els.st?.value || '').trim().toLowerCase();
+                const from = toTsLocal(els.df?.value || '');
+                const to = toTsLocal(els.dt?.value || '');
+                const so = els.so?.value || '';
+
+                rows.forEach(tr => {
+                    const name = tr.dataset.customer || '';
+                    const status = tr.dataset.status || '';
+                    const created = parseInt(tr.dataset.created || '0', 10);
+
+                    const matchText = !q || name.includes(q);
+                    const matchStatus = !st || status === st;
+                    const afterFrom = !from || created >= from;
+                    const beforeTo = !to || created <= to;
+
+                    tr.style.display = (matchText && matchStatus && afterFrom && beforeTo) ? '' :
+                        'none';
+                });
+
+                if (so === 'asc' || so === 'desc') {
+                    const visible = rows.filter(tr => tr.style.display !== 'none');
+                    applySort(visible, so);
+                }
+            };
+
+            window.resetTrxFilters = function() {
+                if (els.q) els.q.value = '';
+                if (els.st) els.st.value = '';
+                if (els.df) els.df.value = '';
+                if (els.dt) els.dt.value = '';
+                if (els.so) els.so.value = '';
+                rows.forEach(tr => tr.style.display = '');
+            };
+
+            // ekspor CSV sesuai baris terlihat
+            window.exportFilteredToCSV = function() {
+                const visibleRows = rows.filter(tr => tr.style.display !== 'none');
+                if (!visibleRows.length) {
+                    alert('Tidak ada data untuk diekspor');
+                    return;
+                }
+
+                // header dari thead, kecuali kolom Actions
+                const headers = Array.from(table.querySelectorAll('thead th'))
+                    .map(th => th.textContent.trim())
+                    .filter(h => h.toLowerCase() !== 'actions');
+
+                const lines = [];
+                lines.push(headers.join(','));
+
+                visibleRows.forEach(tr => {
+                    const tds = Array.from(tr.querySelectorAll('td'));
+                    // ambil kolom 0..(n-2) agar kolom Actions tidak ikut
+                    const cells = tds.slice(0, tds.length - 1).map(td => {
+                        // escape CSV
+                        let txt = td.innerText.replace(/\r?\n|\r/g, ' ').trim();
+                        if (txt.includes(',') || txt.includes('"')) {
+                            txt = '"' + txt.replace(/"/g, '""') + '"';
+                        }
+                        return txt;
+                    });
+                    lines.push(cells.join(','));
+                });
+
+                const csvContent = '\uFEFF' + lines.join('\n'); // BOM biar Excel aman
+                const blob = new Blob([csvContent], {
+                    type: 'text/csv;charset=utf-8;'
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const fname =
+                    `transactions_${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}.csv`;
+                a.href = url;
+                a.download = fname;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            // auto apply saat input berubah
+            ['input', 'change'].forEach(evt => {
+                els.q?.addEventListener(evt, applyTrxFilters);
+                els.st?.addEventListener(evt, applyTrxFilters);
+                els.df?.addEventListener(evt, applyTrxFilters);
+                els.dt?.addEventListener(evt, applyTrxFilters);
+                els.so?.addEventListener(evt, applyTrxFilters);
+            });
+        });
+    </script>
     <script>
         const STATUS_ORDER = ['pending', 'pickup', 'proccessed', 'ready', 'delivered', 'done'];
 
