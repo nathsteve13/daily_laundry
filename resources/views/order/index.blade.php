@@ -31,18 +31,18 @@
 
     <div class="p-6 space-y-6">
         <div class="bg-light p-4 rounded mb-3">
-            <form id="orderClientFilter" class="d-flex gap-2 flex-wrap" onsubmit="return false;">
-                <select id="orderStatus" class="form-select">
+            <form id="orderClientFilter" class="d-flex gap-2 align-items-center" onsubmit="return false;">
+                <select id="orderStatus" class="form-select" style="min-width:120px">
                     <option value="">Semua Status</option>
                     @foreach ($statusOptions as $s)
                         <option value="{{ strtolower($s) }}">{{ ucfirst($s) }}</option>
                     @endforeach
                 </select>
 
-                <input id="orderFrom" type="datetime-local" class="form-control" style="max-width:220px">
-                <input id="orderTo" type="datetime-local" class="form-control" style="max-width:220px">
+                <input id="orderFrom" type="datetime-local" class="form-control" style="width:200px">
+                <input id="orderTo" type="datetime-local" class="form-control" style="width:200px">
 
-                <select id="orderSort" class="form-select">
+                <select id="orderSort" class="form-select" style="min-width:100px">
                     <option value="">Urutkan</option>
                     <option value="asc">Terlama</option>
                     <option value="desc">Terbaru</option>
