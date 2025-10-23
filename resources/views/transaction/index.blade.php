@@ -57,7 +57,7 @@
         <div class="bg-white notion-box overflow-hidden">
             <table class="table align-middle mb-0 table-hover text-nowrap w-full">
                 <thead class="bg-light">
-                    <tr class="text-muted text-uppercase small">
+                    <tr class="text-muted text-uppercase small text-center">
                         <th>No. Transaction</th>
                         <th>Customer</th>
                         <th>Subtotal</th>
@@ -70,7 +70,7 @@
                 </thead>
                 <tbody>
                     @foreach ($transactions as $t)
-                        <tr>
+                        <tr class="text-center">
                             <td>{{ $t->no_transaction }}</td>
                             <td>
                                 @if ($t->customers && $t->customers->isNotEmpty())
@@ -103,7 +103,7 @@
                                     </a>
                                 </span>
                             </td>
-                            <td class="text-end d-flex gap-2 justify-end">
+                            <td class="text-end d-flex gap-2 justify-center">
                                 <a href="{{ route('transactions.edit', $t->no_transaction) }}"
                                     class="btn btn-outline-dark btn-sm notion-btn">Edit</a>
                                 <form action="{{ route('transactions.destroy', $t->no_transaction) }}" method="POST">
@@ -153,11 +153,11 @@
                                 </div>
                                 <div class="mb-3" id="tanggal_ambil_group" style="display: none;">
                                     <label class="form-label">Tanggal Pengambilan</label>
-                                    <input type="datetime-local" name="tanggal_pengambilan" class="form-control">
+                                    <input type="datetime-local" name="tanggal_pengambilan" class="form-control" min="{{ date('Y-m-d\TH:i') }}">
                                 </div>
                                 <div class="mb-3" id="tanggal_kirim_group" style="display: none;">
                                     <label class="form-label">Tanggal Pengiriman</label>
-                                    <input type="datetime-local" name="tanggal_pengiriman" class="form-control">
+                                    <input type="datetime-local" name="tanggal_pengiriman" class="form-control" min="{{ date('Y-m-d\TH:i') }}">
                                 </div>
                             </div>
                             <div class="modal-footer">

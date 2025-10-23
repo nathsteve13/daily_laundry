@@ -25,15 +25,36 @@
         </div>
     @endif
 
+    @php
+        $statusOptions = $orders->pluck('status')->filter()->unique()->values();
+    @endphp
+
     <div class="p-6 space-y-6">
+        <div class="bg-light p-4 rounded mb-3">
+            <form id="orderClientFilter" class="d-flex gap-2" onsubmit="return false;">
+                <select id="orderStatus" class="form-select">
+                    <option value="">Semua Status</option>
+                    @foreach ($statusOptions as $s)
+                        <option value="{{ strtolower($s) }}">{{ ucfirst($s) }}</option>
+                    @endforeach
+                </select>
+                <select id="orderSort" class="form-select">
+                    <option value="">Urutkan</option>
+                    <option value="asc">Terlama</option>
+                    <option value="desc">Terbaru</option>
+                </select>
+                <button type="button" class="btn btn-secondary" onclick="resetOrderFilters()">Reset</button>
+            </form>
+        </div>
+
         <div class="flex items-center justify-between mb-4">
             <h1 class="text-3xl font-semibold text-gray-800">📦 Daftar Pesanan</h1>
         </div>
 
         <div class="bg-white notion-box overflow-hidden">
-            <table class="table align-middle mb-0 table-hover text-nowrap w-full">
+            <table id="ordersTable" class="table align-middle mb-0 table-hover text-nowrap w-full">
                 <thead class="bg-light">
-                    <tr class="text-muted text-uppercase small">
+                    <tr class="text-muted text-uppercase small text-center">
                         <th>No. Order</th>
                         <th>Nama</th>
                         <th>Telepon</th>
@@ -48,7 +69,10 @@
                 </thead>
                 <tbody>
                     @forelse ($orders as $order)
-                        <tr>
+                        <tr data-name="{{ strtolower($order->name) }}"
+                            data-phone="{{ preg_replace('/\D+/', '', $order->phone_number) }}"
+                            data-status="{{ strtolower($order->status) }}"
+                            data-created="{{ $order->created_at->timestamp }}" class="text-center">
                             <td>{{ $order->no_order }}</td>
                             <td>{{ $order->name }}</td>
                             <td>{{ $order->phone_number }}</td>
@@ -114,6 +138,60 @@
 @endphp
 
 @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tbody = document.querySelector('#ordersTable tbody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const els = {
+                q: document.getElementById('orderSearch'),
+                st: document.getElementById('orderStatus'),
+                so: document.getElementById('orderSort'),
+            };
+
+            window.applyOrderFilters = function() {
+                const q = (els.q?.value || '').trim().toLowerCase();
+                const st = (els.st?.value || '').trim().toLowerCase();
+                const so = els.so?.value || '';
+
+                rows.forEach(tr => {
+                    const name = tr.dataset.name || '';
+                    const phone = tr.dataset.phone || '';
+                    const status = tr.dataset.status || '';
+                    const matchText = !q || name.includes(q) || phone.includes(q.replace(/\D+/g, ''));
+                    const matchStatus = !st || status === st;
+                    tr.style.display = (matchText && matchStatus) ? '' : 'none';
+                });
+
+                if (so === 'asc' || so === 'desc') {
+                    const visible = rows.filter(tr => tr.style.display !== 'none');
+                    visible.sort((a, b) => {
+                        const ta = parseInt(a.dataset.created || '0', 10);
+                        const tb = parseInt(b.dataset.created || '0', 10);
+                        return so === 'asc' ? ta - tb : tb - ta;
+                    });
+                    visible.forEach(tr => tbody.appendChild(tr));
+                }
+            };
+
+            window.resetOrderFilters = function() {
+                if (els.q) els.q.value = '';
+                if (els.st) els.st.value = '';
+                if (els.so) els.so.value = '';
+                rows.forEach(tr => tr.style.display = '');
+            };
+
+            // auto apply saat user ketik/ganti
+            ['input', 'change'].forEach(evt => {
+                els.q?.addEventListener(evt, window.applyOrderFilters);
+                els.st?.addEventListener(evt, window.applyOrderFilters);
+                els.so?.addEventListener(evt, window.applyOrderFilters);
+            });
+        });
+    </script>
+
+
     <script>
         // Expose data customer ke JS
         window.CUSTOMERS = @json($customerJson);
