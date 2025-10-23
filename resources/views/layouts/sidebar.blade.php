@@ -8,38 +8,59 @@
     <div class="p-4">
         <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">DAILY LAUNDRY</h2>
         <ul class="space-y-3">
-            {{-- Menu untuk Admin --}}
-            @if (in_array($role, ['admin', 'kasir']))
+            {{-- Satu blok menu dengan cek role per item --}}
+            {{-- Dashboard: admin, kasir, kurir --}}
+            @if (in_array($role, ['admin', 'kasir', 'kurir']))
                 <li>
                     <a href="{{ route('dashboard') }}"
                         class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
                         <span class="flex-1">🏠 Dashboard</span>
                     </a>
                 </li>
+            @endif
+
+            {{-- Customers: admin, kasir --}}
+            @if (in_array($role, ['admin', 'kasir']))
                 <li>
                     <a href="{{ route('customers.index') }}"
                         class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
                         <span class="flex-1">🧍 Customers</span>
                     </a>
                 </li>
+            @endif
+
+            {{-- Service Types: admin, kasir --}}
+            @if (in_array($role, ['admin', 'kasir']))
                 <li>
                     <a href="{{ route('service-types.index') }}"
                         class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
                         <span class="flex-1">🛎️ Service Types</span>
                     </a>
                 </li>
+            @endif
+
+            {{-- Transactions: admin, kasir --}}
+            @if (in_array($role, ['admin', 'kasir']))
                 <li>
                     <a href="{{ route('transactions.index') }}"
                         class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
                         <span class="flex-1">🔄 Transactions</span>
                     </a>
                 </li>
+            @endif
+
+            {{-- Payments: admin, kasir --}}
+            @if (in_array($role, ['admin', 'kasir']))
                 <li>
                     <a href="{{ route('payments.index') }}"
                         class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
                         <span class="flex-1">💰 Payments</span>
                     </a>
                 </li>
+            @endif
+
+            {{-- Orders: admin, kasir --}}
+            @if (in_array($role, ['admin', 'kasir']))
                 <li>
                     <a href="{{ route('order.index') }}"
                         class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
@@ -48,14 +69,8 @@
                 </li>
             @endif
 
-            {{-- Menu untuk Admin, Kurir, dan Kasir --}}
+            {{-- Kurir: admin, kurir, kasir --}}
             @if (in_array($role, ['admin', 'kurir', 'kasir']))
-                <li>
-                    <a href="{{ route('dashboard') }}"
-                        class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
-                        <span class="flex-1">🏠 Dashboard</span>
-                    </a>
-                </li>
                 <li>
                     <a href="{{ route('kurir.pengambilan.index') }}"
                         class="flex items-center p-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg no-underline">
@@ -72,7 +87,6 @@
         </ul>
     </div>
 </aside>
-
 
 <!-- Overlay backdrop -->
 <div id="backdrop" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40 md:hidden"></div>

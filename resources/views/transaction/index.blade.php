@@ -145,7 +145,9 @@
                                     <label class="form-label">Pilih Kurir</label>
                                     <select name="kurir_id" class="form-select" required>
                                         @foreach ($kurirs as $k)
-                                            <option value="{{ $k->id }}">{{ $k->username }}</option>
+                                            <option value="{{ $k->id }}">{{ $k->username }}
+                                                ({{ $k->pickups_count }} pickups, {{ $k->deliveries_count }} deliveries)
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -181,7 +183,7 @@
                             <div class="modal-body space-y-4">
                                 <div class="mb-3">
                                     <label class="form-label">Status Baru</label>
-                                    <select name="status" class="form-select" required>
+                                    <select id="status_select" name="status" class="form-select" required>
                                         <option value="pending">Pending</option>
                                         <option value="pickup">Pickup</option>
                                         <option value="proccessed">Proccessed</option>
@@ -203,13 +205,83 @@
     </div>
 
 @endsection
+@push('styles')
+    <style>
+        #statusModal select option:disabled {
+            color: #9aa0a6;
+        }
+    </style>
+@endpush
 @push('scripts')
     <script>
-        function openStatusModal(no_transaction) {
+        const STATUS_ORDER = ['pending', 'pickup', 'proccessed', 'ready', 'delivered', 'done'];
+
+        // panggil ini seperti openStatusModal(noTrx) atau openStatusModal(noTrx, currentStatus)
+        function openStatusModal(no_transaction, currentStatus = null) {
             document.getElementById('modal_no_transaction').value = no_transaction;
-            const modal = new bootstrap.Modal(document.getElementById('statusModal'));
-            modal.show();
+
+            // dapatkan status saat ini
+            let cur = currentStatus;
+            if (!cur) {
+                // fallback ambil dari badge di tabel
+                cur = document.querySelector('#status-' + no_transaction + ' a')?.textContent?.trim().toLowerCase() ||
+                    'pending';
+            }
+
+            const select = document.querySelector('#statusModal #status_select');
+            const curIdx = STATUS_ORDER.indexOf(cur);
+            const lastIdx = STATUS_ORDER.length - 1;
+
+            // reset
+            select.disabled = false;
+            Array.from(select.options).forEach(o => o.disabled = false);
+
+            if (curIdx >= 0) {
+                const allowedIdx = (curIdx === lastIdx) ? [curIdx] : [curIdx, curIdx + 1];
+
+                // kunci opsi
+                Array.from(select.options).forEach(o => {
+                    const idx = STATUS_ORDER.indexOf(o.value);
+                    o.disabled = !allowedIdx.includes(idx);
+                });
+
+                // set default ke next kalau ada, jika tidak tetap
+                const nextIdx = Math.min(curIdx + 1, lastIdx);
+                select.value = STATUS_ORDER[nextIdx];
+                if (select.options[select.selectedIndex]?.disabled) {
+                    select.value = STATUS_ORDER[curIdx];
+                }
+
+                // jika sudah status terakhir, kunci seluruh select
+                if (curIdx === lastIdx) {
+                    select.disabled = true;
+                }
+            } else {
+                // fallback: hanya pending
+                Array.from(select.options).forEach(o => o.disabled = (o.value !== 'pending'));
+                select.value = 'pending';
+            }
+
+            new bootstrap.Modal(document.getElementById('statusModal')).show();
         }
+
+        // guard tambahan. Cegah user paksa pilih opsi yang disabled via keyboard atau scroll.
+        (function bindStatusGuard() {
+            const sel = document.querySelector('#statusModal #status_select');
+            if (!sel) return;
+            sel.addEventListener('change', function() {
+                if (this.options[this.selectedIndex]?.disabled) {
+                    // kembalikan ke opsi pertama yang tidak disabled
+                    const firstEnabled = Array.from(this.options).find(o => !o.disabled);
+                    if (firstEnabled) this.value = firstEnabled.value;
+                }
+            }, {
+                passive: true
+            });
+            sel.addEventListener('wheel', e => e.preventDefault(), {
+                passive: false
+            });
+        })();
     </script>
 @endpush
 
@@ -260,12 +332,6 @@
                     alert('Terjadi kesalahan.');
                 });
         });
-
-        function openStatusModal(no_transaction) {
-            document.getElementById('modal_no_transaction').value = no_transaction;
-            const modal = new bootstrap.Modal(document.getElementById('statusModal'));
-            modal.show();
-        }
 
         document.getElementById('statusForm').addEventListener('submit', function(e) {
             e.preventDefault();

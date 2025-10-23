@@ -28,10 +28,40 @@ class OrderController extends Controller
         }
     }
 
+    public function tolak(Request $request)
+    {
+        $validated = $request->validate([
+            'no_order' => 'required|exists:order_requests,no_order',
+        ]);
+
+        $order = OrderRequest::where('no_order', $validated['no_order'])->firstOrFail();
+
+        if ($order->status === 'selesai') {
+            return back()->with('error', 'Gagal menolak pesanan. Pesanan sudah selesai diproses.');
+        }
+        if ($order->status === 'ditolak') {
+            return back()->with('error', 'Pesanan sudah ditolak.');
+        }
+
+
+        try {
+            DB::beginTransaction();
+
+            $order->lockForUpdate();
+            $order->update(['status' => 'ditolak']);
+
+            DB::commit();
+            return redirect()->route('order.index')->with('success', 'Pesanan berhasil ditolak.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            report($e);
+            return back()->with('error', 'Gagal menolak pesanan.');
+        }
+    }
     public function terima(Request $request)
     {
         try {
-            
+
             $validated = $request->validate([
                 'no_order' => 'required|exists:order_requests,no_order',
                 'customers_id' => 'required|exists:customers,id',

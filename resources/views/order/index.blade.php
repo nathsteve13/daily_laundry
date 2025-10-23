@@ -56,17 +56,35 @@
                             <td>{{ $order->serviceType->name ?? '-' }}</td>
                             <td>Rp {{ number_format($order->estimated_value, 0) }}</td>
                             <td>
-                                <span class="badge bg-{{ $order->status === 'selesai' ? 'success' : 'warning' }}">
+                                <span
+                                    class="badge
+                                        @if ($order->status === 'selesai') bg-success
+                                        @elseif($order->status === 'ditolak') bg-danger
+                                        @else bg-warning @endif">
                                     {{ ucfirst($order->status) }}
                                 </span>
+
                             </td>
                             <td>{{ ucfirst($order->delivery_type) }}</td>
                             <td>{{ $order->created_at->format('d/m/Y') }}</td>
                             <td>
-                                <button data-order='@json($order->append('details'))' onclick="showTerimaModal(this)"
-                                    class="btn btn-sm btn-dark">Terima</button>
+                                <div class="d-flex gap-2">
+                                    <button data-order='@json($order->append('details'))' onclick="showTerimaModal(this)"
+                                        class="btn btn-sm btn-dark">
+                                        Terima
+                                    </button>
 
+                                    <form action="{{ route('order.tolak') }}" method="POST"
+                                        onsubmit="return confirm('Tolak pesanan ini?')">
+                                        @csrf
+                                        <input type="hidden" name="no_order" value="{{ $order->no_order }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            Tolak
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
+
                         </tr>
                     @empty
                         <tr>
@@ -78,130 +96,243 @@
         </div>
     </div>
 
-    <!-- Modal Terima Pesanan -->
-    <div id="terimaModal" class="modal fade" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form action="{{ route('order.terima') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="no_order" id="modal_no_order">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Terima Pesanan</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body space-y-4">
-                        <div>
-                            <label class="form-label">Data Pesanan</label>
-                            <div id="orderData" class="border p-3 rounded bg-light text-sm">
-                                <!-- diisi via JS -->
-                            </div>
-                        </div>
+    @include('order.modal-order-terima')
 
-                        <div>
-                            <label class="form-label">Pilih Customer</label>
-                            <div class="d-flex gap-2 mb-2">
-                                <input type="text" name="customer_search" class="form-control"
-                                    placeholder="Cari customer...">
-                                <a href="{{ route('customers.create') }}" class="btn btn-outline-primary">+ Customer
-                                    Baru</a>
-                            </div>
-                            <select name="customers_id" class="form-select" required>
-                                <option value="">-- Pilih Customer --</option>
-                                @foreach ($customers as $c)
-                                    <option value="{{ $c->id }}">{{ $c->name }} - {{ $c->phone_number }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="form-label">Detail Transaksi</label>
-                            <div id="layanan-list" class="row g-3">
-                                <!-- detail layanan akan diisi via JS -->
-                            </div>
-                            <div class="row mt-4">
-                                <div class="col-md-4">
-                                    <label class="form-label">Subtotal</label>
-                                    <input type="number" name="subtotal_display" id="subtotal_display"
-                                        class="form-control bg-light" readonly>
-
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Diskon (Rp)</label>
-                                    <input type="number" name="discount" id="discount" class="form-control" step="0.01"
-                                        value="0">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Total</label>
-                                    <input type="number" name="total_display" id="total_display"
-                                        class="form-control bg-light" readonly>
-                                </div>
-                            </div>
-
-                            <!-- nilai asli -->
-                            <input type="hidden" name="subtotal" id="subtotal">
-                            <input type="hidden" name="total" id="total">
-
-                        </div>
-                    </div>
-                    <input type="hidden" name="pickup" id="pickup">
-
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-success">✔ Terima</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
 @endsection
+@php
+    // Siapkan data customer sederhana agar @json tidak error
+    $customerJson = $customers
+        ->map(function ($c) {
+            return [
+                'id' => $c->id,
+                'name' => $c->name,
+                'phone' => $c->phone_number,
+            ];
+        })
+        ->values();
+@endphp
 
 @push('scripts')
     <script>
+        // Expose data customer ke JS
+        window.CUSTOMERS = @json($customerJson);
+
+        function normalizePhone(s) {
+            if (!s) return ''
+            return String(s).replace(/\D+/g, '')
+        }
+
+        function buildSubstrings(phoneDigits, len) {
+            const out = new Set()
+            if (!phoneDigits || phoneDigits.length < len) return out
+            for (let i = 0; i <= phoneDigits.length - len; i++) {
+                out.add(phoneDigits.slice(i, i + len))
+            }
+            return out
+        }
+
+        function scoreCustomerMatch(orderPhoneDigits, customerPhoneDigits) {
+            const subs5 = buildSubstrings(orderPhoneDigits, 5)
+            const subs4 = buildSubstrings(orderPhoneDigits, 4)
+
+            let score = 0
+            let bestLen = 0
+
+            subs5.forEach(sub => {
+                if (customerPhoneDigits.includes(sub)) {
+                    score += 10
+                    bestLen = Math.max(bestLen, 5)
+                }
+            })
+
+            subs4.forEach(sub => {
+                if (customerPhoneDigits.includes(sub)) {
+                    score += 3
+                    bestLen = Math.max(bestLen, 4)
+                }
+            })
+
+            return {
+                score,
+                bestLen
+            }
+        }
+
+        function renderCustomerSuggestions(candidates) {
+            const modal = document.getElementById('terimaModal');
+            const wrap = modal?.querySelector('#customer-suggestions');
+            if (!wrap) return;
+
+            if (!candidates.length) {
+                wrap.innerHTML = '<small class="text-muted">Tidak ada kandidat cocok</small>';
+                return;
+            }
+
+            const top = candidates.slice(0, 3);
+            const btns = top.map(c => `
+                <button type="button" class="btn btn-sm btn-outline-secondary me-2 mb-2"
+                        onclick="selectCustomer(${c.id})">
+                ${c.name} • ${c.phone} • match ${c.bestLen} digits
+                </button>
+            `).join('');
+
+            wrap.innerHTML = `
+                <div class="mt-1">
+                <small class="text-muted d-block mb-1">Saran cocok</small>
+                ${btns}
+                </div>
+            `;
+        }
+
+        function selectCustomer(id) {
+            const modal = document.getElementById('terimaModal');
+            const select = modal?.querySelector('select[name="customers_id"]');
+            if (!select) return;
+            select.value = String(id);
+            select.dispatchEvent(new Event('change'));
+        }
+
+        function autoSuggestCustomer(orderPhoneRaw) {
+            const orderDigits = normalizePhone(orderPhoneRaw);
+            const modal = document.getElementById('terimaModal');
+            const select = modal?.querySelector('select[name="customers_id"]');
+
+            if (!orderDigits || !Array.isArray(window.CUSTOMERS)) {
+                renderCustomerSuggestions([]);
+                return;
+            }
+
+            const scored = window.CUSTOMERS.map(c => {
+                const cDigits = normalizePhone(c.phone);
+                const {
+                    score,
+                    bestLen
+                } = scoreCustomerMatch(orderDigits, cDigits);
+                return {
+                    ...c,
+                    score,
+                    bestLen
+                };
+            }).filter(x => x.score > 0);
+
+            scored.sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                if (b.bestLen !== a.bestLen) return b.bestLen - a.bestLen;
+                return a.name.localeCompare(b.name);
+            });
+
+            // reset select ke daftar awal (kalau sebelumnya terfilter)
+            if (select && select.options.length > 0 && select.options[0].value === '') {
+                // biarkan isi asal dari Blade; tidak perlu rebuild
+            }
+
+            if (scored.length) selectCustomer(scored[0].id);
+            renderCustomerSuggestions(scored);
+        }
+
+        // Filter select saat user mengetik di input cari
+        function customerSearchInputInit() {
+            const modal = document.getElementById('terimaModal');
+            const input = modal?.querySelector('input[name="customer_search"]');
+            const select = modal?.querySelector('select[name="customers_id"]');
+            if (!input || !select) return;
+
+            const originalOptions = Array.from(select.options).map(o => ({
+                value: o.value,
+                text: o.text
+            }));
+
+            input.addEventListener('input', () => {
+                const q = input.value.toLowerCase().trim();
+                // reset isi ke opsi asli dari Blade agar id selalu ada
+                select.innerHTML = '';
+                originalOptions.forEach(o => {
+                    if (o.value === '' || o.text.toLowerCase().includes(q)) {
+                        const opt = document.createElement('option');
+                        opt.value = o.value;
+                        opt.textContent = o.text;
+                        select.appendChild(opt);
+                    }
+                });
+            });
+        }
+        document.addEventListener('DOMContentLoaded', customerSearchInputInit);
+
+        // Integrasi ke alur modal Anda
         function showTerimaModal(button) {
             const order = JSON.parse(button.getAttribute('data-order'));
             document.getElementById('modal_no_order').value = order.no_order;
 
-            const layananContainer = document.getElementById('layanan-list');
-            layananContainer.innerHTML = '';
-            document.getElementById('pickup').value = order.delivery_type.toLowerCase().includes('ambil') ? 1 : 0;
+            const modal = document.getElementById('terimaModal');
+            const layananContainer = modal.querySelector('#layanan-list');
+            const pickupInput = modal.querySelector('#pickup');
+            const dataDiv = modal.querySelector('#orderData');
 
-            let totalEstimasi = 0;
-            const layananHTML = (order.details || []).map((d, i) => {
-                return `
-                    <div class="col-md-6">
-                        <label class="form-label">Jenis Layanan</label>
-                        <input type="text" class="form-control" readonly value="${d.service_type.name}">
-                        <input type="hidden" name="details[${i}][service_type_id]" value="${d.service_type_id}" data-price="${d.service_type.price}">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Estimasi</label>
-                        <input type="text" class="form-control" readonly value="${d.estimated_value}">
-                        <input type="hidden" name="details[${i}][estimated_value]" value="${d.estimated_value}">
-                    </div>
-                `;
-            }).join('');
+            layananContainer.innerHTML = (order.details || []).map((d, i) => `
+                <div class="col-md-6">
+                <label class="form-label">Jenis Layanan</label>
+                <input type="text" class="form-control" readonly value="${d.service_type.name}">
+                <input type="hidden" name="details[${i}][service_type_id]" value="${d.service_type_id}" data-price="${d.service_type.price}">
+                </div>
+                <div class="col-md-6">
+                <label class="form-label">Estimasi</label>
+                <input type="text" class="form-control" readonly value="${d.estimated_value}">
+                <input type="hidden" name="details[${i}][estimated_value]" value="${d.estimated_value}">
+                </div>
+            `).join('');
 
+            pickupInput.value = order.delivery_type?.toLowerCase().includes('ambil') ? 1 : 0;
 
-            layananContainer.innerHTML = layananHTML;
-
-            const dataDiv = document.getElementById('orderData');
             dataDiv.innerHTML = `
                 <div><strong>No Order:</strong> ${order.no_order}</div>
                 <div><strong>Nama:</strong> ${order.name}</div>
                 <div><strong>Telepon:</strong> ${order.phone_number}</div>
                 <div><strong>Alamat:</strong> ${order.address}</div>
-                <div><strong>Estimasi:</strong> Rp ${totalEstimasi.toLocaleString()}</div>
                 <div><strong>Pengantaran:</strong> ${order.delivery_type}</div>
             `;
 
-            document.getElementById('discount').addEventListener('input', calculateTotalFromModal);
+            autoSuggestCustomer(order.phone_number);
+
+            const disc = modal.querySelector('#discount');
+            disc.removeEventListener('input', calculateTotalFromModal);
+            disc.addEventListener('input', calculateTotalFromModal);
             calculateTotalFromModal();
 
-
-
-            new bootstrap.Modal(document.getElementById('terimaModal')).show();
+            new bootstrap.Modal(modal).show();
         }
+        // Fungsi hitung total Anda tetap dipakai
+        function calculateTotalFromModal() {
+            const discountInput = document.getElementById('discount')
+            const subtotalField = document.getElementById('subtotal')
+            const subtotalDisplay = document.getElementById('subtotal_display')
+            const totalField = document.getElementById('total')
+            const totalDisplay = document.getElementById('total_display')
+
+            let subtotal = 0
+            const serviceInputs = document.querySelectorAll('input[name^="details"][name$="[service_type_id]"]')
+
+            serviceInputs.forEach(input => {
+                const name = input.name
+                const index = name.match(/^details\[(\d+)]/)[1]
+                const priceInput = document.querySelector(`input[name="details[${index}][service_type_id]"]`)
+                const price = parseFloat(priceInput?.getAttribute('data-price') || 0)
+                const estInput = document.querySelector(`input[name="details[${index}][estimated_value]"]`)
+                const estimated = parseFloat(estInput?.value || 0)
+                if (!priceInput || !estInput || isNaN(price) || isNaN(estimated)) return
+                subtotal += price * estimated
+            })
+
+            const discount = parseFloat(discountInput.value) || 0
+            const total = Math.max(0, subtotal - discount)
+
+            subtotalField.value = subtotal.toFixed(2)
+            subtotalDisplay.value = subtotal.toFixed(2)
+            totalField.value = total.toFixed(2)
+            totalDisplay.value = total.toFixed(2)
+        }
+
+
 
         function calculateTotalFromModal() {
             const discountInput = document.getElementById('discount');

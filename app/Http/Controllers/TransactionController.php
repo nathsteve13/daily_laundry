@@ -38,7 +38,9 @@ class TransactionController extends Controller
             }
 
             $transactions = $query->get();
-            $kurirs = User::where('role', 'kurir')->get();
+            $kurirs = User::where('role', 'kurir')
+                ->withCount(['deliveries', 'pickups'])
+                ->get();
 
             return view('transaction.index', compact('transactions', 'kurirs'));
         } catch (\Throwable $e) {
@@ -236,8 +238,6 @@ class TransactionController extends Controller
                 'discount' => 'required|numeric',
                 'total' => 'required|numeric',
                 'users_id' => 'required|integer|exists:users,id',
-                'customers_id' => 'required|array',
-                'customers_id.*' => 'integer|exists:customers,id',
                 'details' => 'required|array',
                 'details.*.pickup' => 'required|boolean',
                 'details.*.value_per_unit' => 'required|numeric',
@@ -255,7 +255,6 @@ class TransactionController extends Controller
                     'users_id' => $validated['users_id'],
                 ]);
 
-                $transaction->customers()->sync($validated['customers_id']);
                 $transaction->details()->delete();
 
                 foreach ($validated['details'] as $detail) {

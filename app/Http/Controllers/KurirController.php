@@ -88,7 +88,7 @@ class KurirController extends Controller
                 'tanggal_terkirim' => 'required|date',
                 'bukti_terima'     => 'nullable|file|mimes:jpg,jpeg,png|max:40000',
             ]);
-            
+
 
             if ($request->hasFile('bukti_terima')) {
                 // Hapus file lama jika ada
@@ -136,9 +136,6 @@ class KurirController extends Controller
             return back()->with('error', 'Gagal menghapus data.');
         }
     }
-
-
-
 
     public function pengambilanIndex()
     {

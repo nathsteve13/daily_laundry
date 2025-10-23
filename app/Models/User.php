@@ -28,4 +28,5 @@ class User extends Authenticatable
         return $this->hasMany(PickupList::class, 'kurir_id');
     }
 
+
 }
