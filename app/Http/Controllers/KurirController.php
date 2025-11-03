@@ -21,8 +21,11 @@ class KurirController extends Controller
 
     public function create()
     {
-        // Ambil transaksi yang belum pernah di-assign ke pengantaran
-        $assignedTransactions = DeliveryList::pluck('no_transaction')->toArray();
+        // Ambil transaksi yang belum pernah di-assign ke pengantaran ATAU pengambilan
+        $assignedInDelivery = DeliveryList::pluck('no_transaction')->toArray();
+        $assignedInPickup = PickupList::pluck('no_transaction')->toArray();
+        $assignedTransactions = array_merge($assignedInDelivery, $assignedInPickup);
+
         $transactions = Transaction::whereNotIn('no_transaction', $assignedTransactions)
             ->pluck('no_transaction');
 
@@ -42,10 +45,16 @@ class KurirController extends Controller
                 'bukti_terima' => 'nullable|file|mimes:jpg,png,jpeg|max:2048'
             ]);
 
-            // Cek apakah transaksi sudah pernah di-assign
+            // Cek apakah transaksi sudah pernah di-assign di pengantaran atau pengambilan
             $existingDelivery = DeliveryList::where('no_transaction', $data['no_transaction'])->first();
+            $existingPickup = PickupList::where('no_transaction', $data['no_transaction'])->first();
+
             if ($existingDelivery) {
                 return back()->withInput()->with('error', 'Transaksi ini sudah di-assign ke pengantaran.');
+            }
+
+            if ($existingPickup) {
+                return back()->withInput()->with('error', 'Transaksi ini sudah di-assign ke pengambilan.');
             }
 
             $date = now()->format('Ymd');
@@ -81,9 +90,12 @@ class KurirController extends Controller
     {
         $delivery = DeliveryList::where('no_delivery', $no_delivery)->firstOrFail();
 
-        // Ambil transaksi yang belum di-assign, plus transaksi yang sedang di-edit ini
-        $assignedTransactions = DeliveryList::where('no_delivery', '!=', $no_delivery)
+        // Ambil transaksi yang belum di-assign di delivery dan pickup, plus transaksi yang sedang di-edit ini
+        $assignedInDelivery = DeliveryList::where('no_delivery', '!=', $no_delivery)
             ->pluck('no_transaction')->toArray();
+        $assignedInPickup = PickupList::pluck('no_transaction')->toArray();
+        $assignedTransactions = array_merge($assignedInDelivery, $assignedInPickup);
+
         $transactions = Transaction::whereNotIn('no_transaction', $assignedTransactions)
             ->pluck('no_transaction');
 
@@ -104,13 +116,19 @@ class KurirController extends Controller
                 'bukti_terima'     => 'nullable|file|mimes:jpg,jpeg,png|max:40000',
             ]);
 
-            // Cek apakah transaksi yang baru sudah di-assign ke pengantaran lain
+            // Cek apakah transaksi yang baru sudah di-assign ke pengantaran lain atau pengambilan
             if ($validated['no_transaction'] != $delivery->no_transaction) {
                 $existingDelivery = DeliveryList::where('no_transaction', $validated['no_transaction'])
                     ->where('no_delivery', '!=', $id)
                     ->first();
+                $existingPickup = PickupList::where('no_transaction', $validated['no_transaction'])->first();
+
                 if ($existingDelivery) {
                     return back()->withInput()->with('error', 'Transaksi ini sudah di-assign ke pengantaran lain.');
+                }
+
+                if ($existingPickup) {
+                    return back()->withInput()->with('error', 'Transaksi ini sudah di-assign ke pengambilan.');
                 }
             }
 
@@ -175,8 +193,11 @@ class KurirController extends Controller
 
     public function pengambilanCreate()
     {
-        // Ambil transaksi yang belum pernah di-assign ke pengambilan
-        $assignedTransactions = PickupList::pluck('no_transaction')->toArray();
+        // Ambil transaksi yang belum pernah di-assign ke pengambilan ATAU pengantaran
+        $assignedInPickup = PickupList::pluck('no_transaction')->toArray();
+        $assignedInDelivery = DeliveryList::pluck('no_transaction')->toArray();
+        $assignedTransactions = array_merge($assignedInPickup, $assignedInDelivery);
+
         $transactions = Transaction::whereNotIn('no_transaction', $assignedTransactions)
             ->pluck('no_transaction');
 
@@ -196,10 +217,16 @@ class KurirController extends Controller
                 'bukti_ambil' => 'nullable|image|max:40000'
             ]);
 
-            // Cek apakah transaksi sudah pernah di-assign
+            // Cek apakah transaksi sudah pernah di-assign di pengambilan atau pengantaran
             $existingPickup = PickupList::where('no_transaction', $request->no_transaction)->first();
+            $existingDelivery = DeliveryList::where('no_transaction', $request->no_transaction)->first();
+
             if ($existingPickup) {
                 return back()->withInput()->with('error', 'Transaksi ini sudah di-assign ke pengambilan.');
+            }
+
+            if ($existingDelivery) {
+                return back()->withInput()->with('error', 'Transaksi ini sudah di-assign ke pengantaran.');
             }
 
             DB::beginTransaction();
@@ -247,9 +274,12 @@ class KurirController extends Controller
     {
         $pengambilan = PickupList::findOrFail($id);
 
-        // Ambil transaksi yang belum di-assign, plus transaksi yang sedang di-edit ini
-        $assignedTransactions = PickupList::where('no_pickup', '!=', $id)
+        // Ambil transaksi yang belum di-assign di pickup dan delivery, plus transaksi yang sedang di-edit ini
+        $assignedInPickup = PickupList::where('no_pickup', '!=', $id)
             ->pluck('no_transaction')->toArray();
+        $assignedInDelivery = DeliveryList::pluck('no_transaction')->toArray();
+        $assignedTransactions = array_merge($assignedInPickup, $assignedInDelivery);
+
         $transactions = Transaction::whereNotIn('no_transaction', $assignedTransactions)
             ->pluck('no_transaction');
 
@@ -272,13 +302,19 @@ class KurirController extends Controller
 
             $pickup = PickupList::findOrFail($id);
 
-            // Cek apakah transaksi yang baru sudah di-assign ke pengambilan lain
+            // Cek apakah transaksi yang baru sudah di-assign ke pengambilan lain atau pengantaran
             if ($request->no_transaction != $pickup->no_transaction) {
                 $existingPickup = PickupList::where('no_transaction', $request->no_transaction)
                     ->where('no_pickup', '!=', $id)
                     ->first();
+                $existingDelivery = DeliveryList::where('no_transaction', $request->no_transaction)->first();
+
                 if ($existingPickup) {
                     return back()->withInput()->with('error', 'Transaksi ini sudah di-assign ke pengambilan lain.');
+                }
+
+                if ($existingDelivery) {
+                    return back()->withInput()->with('error', 'Transaksi ini sudah di-assign ke pengantaran.');
                 }
             }
 
@@ -322,8 +358,14 @@ class KurirController extends Controller
     {
         try {
             $pickup = PickupList::findOrFail($id);
+
+            // Hapus file bukti jika ada
+            if ($pickup->bukti_pengambilan && file_exists(public_path($pickup->bukti_pengambilan))) {
+                unlink(public_path($pickup->bukti_pengambilan));
+            }
+
             $pickup->delete();
-            return redirect()->route('kurir.pengambilan')->with('success', 'Data berhasil dihapus.');
+            return redirect()->route('kurir.pengambilan.index')->with('success', 'Data berhasil dihapus.');
         } catch (\Throwable $e) {
             report($e);
             return back()->with('error', 'Gagal menghapus data.');
