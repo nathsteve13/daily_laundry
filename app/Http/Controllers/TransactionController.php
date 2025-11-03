@@ -309,14 +309,22 @@ class TransactionController extends Controller
         try {
             DB::transaction(function () use ($no_transaction) {
                 $transaction = Transaction::findOrFail($no_transaction);
+
+                // Hapus semua relasi terlebih dahulu
                 $transaction->customers()->detach();
                 $transaction->details()->delete();
                 $transaction->status()->delete();
+                $transaction->payments()->delete();
+                $transaction->deliveryLists()->delete();
+                $transaction->pickupLists()->delete();
+
+                // Baru hapus transaksi
                 $transaction->delete();
             });
 
             return redirect()->route('transactions.index')->with('success', 'Transaction deleted');
         } catch (\Exception $e) {
+            dd($e->getMessage());
             return redirect()->route('transactions.index')->with('error', 'Failed to delete transaction');
         }
     }
