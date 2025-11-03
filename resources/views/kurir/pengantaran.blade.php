@@ -25,7 +25,8 @@
         {{-- Filter Frontend --}}
         <div class="bg-light p-4 rounded mb-3">
             <form id="deliveryClientFilter" class="d-flex gap-2" onsubmit="return false;">
-                <input type="text" id="deliverySearch" class="form-control" placeholder="🔍 Cari no. delivery, transaksi, kurir, kecamatan, kelurahan..." style="max-width:400px">
+                <input type="text" id="deliverySearch" class="form-control"
+                    placeholder="🔍 Cari no. delivery, transaksi, kurir, kecamatan, kelurahan..." style="max-width:400px">
                 <select id="deliveryStatus" class="form-select" style="max-width:220px">
                     <option value="">Semua Status</option>
                     <option value="belum">Belum terkirim</option>
@@ -70,8 +71,8 @@
                             $statusUi = $isDone ? 'Selesai' : 'Belum terkirim';
                             $statusVal = $isDone ? 'selesai' : 'belum';
                         @endphp
-                        <tr class="text-center delivery-row" data-status="{{ $statusVal }}" data-diantar="{{ $diantarTs }}"
-                            data-terkirim="{{ $terkirimTs }}"
+                        <tr class="text-center delivery-row" data-status="{{ $statusVal }}"
+                            data-diantar="{{ $diantarTs }}" data-terkirim="{{ $terkirimTs }}"
                             data-search="{{ strtolower($d->no_delivery . ' ' . $d->no_transaction . ' ' . ($d->kurir->username ?? '') . ' ' . ($d->transaction->kecamatan->name ?? '') . ' ' . ($d->transaction->kelurahan->name ?? '')) }}">
                             <td>{{ $d->no_delivery }}</td>
                             <td>{{ $d->no_transaction }}</td>
@@ -146,10 +147,10 @@
                 rows.forEach(tr => {
                     const status = (tr.dataset.status || '').toLowerCase();
                     const searchData = (tr.dataset.search || '').toLowerCase();
-                    
+
                     const matchSearch = !searchText || searchData.includes(searchText);
                     const matchStatus = !st || status === st;
-                    
+
                     tr.style.display = (matchSearch && matchStatus) ? '' : 'none';
                 });
 
