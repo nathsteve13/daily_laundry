@@ -6,6 +6,7 @@
     <div class="p-6 space-y-6">
         <div class="bg-light p-4 rounded mb-3">
             <form id="pickupClientFilter" class="d-flex gap-2" onsubmit="return false;">
+                <input type="text" id="pickupSearch" class="form-control" placeholder="🔍 Cari no. pickup, transaksi, kurir, kecamatan, kelurahan..." style="max-width:400px">
                 <select id="pickupStatus" class="form-select" style="max-width:220px">
                     <option value="">Semua Status</option>
                     <option value="belum">Belum diantar</option>
@@ -61,8 +62,9 @@
                             $ambilTs = $row->tanggal_pengambilan ? strtotime($row->tanggal_pengambilan) : 0;
                             $sampaiTs = $row->tanggal_diambil ? strtotime($row->tanggal_diambil) : 0;
                         @endphp
-                        <tr class="text-center" data-status="{{ $statusVal }}" data-ambil="{{ $ambilTs }}"
-                            data-sampai="{{ $sampaiTs }}">
+                        <tr class="text-center pickup-row" data-status="{{ $statusVal }}" data-ambil="{{ $ambilTs }}"
+                            data-sampai="{{ $sampaiTs }}"
+                            data-search="{{ strtolower($row->no_pickup . ' ' . ($row->transaction->no_transaction ?? '') . ' ' . ($row->kurir->username ?? '') . ' ' . ($row->transaction->kecamatan->name ?? '') . ' ' . ($row->transaction->kelurahan->name ?? '')) }}">
                             <td>{{ $row->no_pickup }}</td>
                             <td>{{ $row->transaction->no_transaction ?? '-' }}</td>
                             <td>{{ $row->kurir->username ?? '-' }}</td>
@@ -111,6 +113,7 @@
 
             const rows = Array.from(tbody.querySelectorAll('tr'));
             const els = {
+                search: document.getElementById('pickupSearch'),
                 st: document.getElementById('pickupStatus'),
                 so: document.getElementById('pickupSort'),
             };
@@ -126,13 +129,18 @@
             }
 
             window.applyPickupFilters = function() {
+                const searchText = (els.search?.value || '').trim().toLowerCase();
                 const st = (els.st?.value || '').trim().toLowerCase();
                 const so = els.so?.value || '';
 
                 rows.forEach(tr => {
                     const status = (tr.dataset.status || '').toLowerCase();
+                    const searchData = (tr.dataset.search || '').toLowerCase();
+                    
+                    const matchSearch = !searchText || searchData.includes(searchText);
                     const matchStatus = !st || status === st;
-                    tr.style.display = matchStatus ? '' : 'none';
+                    
+                    tr.style.display = (matchSearch && matchStatus) ? '' : 'none';
                 });
 
                 if (so) {
@@ -143,12 +151,14 @@
             };
 
             window.resetPickupFilters = function() {
+                if (els.search) els.search.value = '';
                 if (els.st) els.st.value = '';
                 if (els.so) els.so.value = '';
                 rows.forEach(tr => tr.style.display = '');
             };
 
-            ['change'].forEach(evt => {
+            ['input', 'change'].forEach(evt => {
+                els.search?.addEventListener(evt, applyPickupFilters);
                 els.st?.addEventListener(evt, applyPickupFilters);
                 els.so?.addEventListener(evt, applyPickupFilters);
             });

@@ -25,6 +25,7 @@
         {{-- Filter Frontend --}}
         <div class="bg-light p-4 rounded mb-3">
             <form id="deliveryClientFilter" class="d-flex gap-2" onsubmit="return false;">
+                <input type="text" id="deliverySearch" class="form-control" placeholder="🔍 Cari no. delivery, transaksi, kurir, kecamatan, kelurahan..." style="max-width:400px">
                 <select id="deliveryStatus" class="form-select" style="max-width:220px">
                     <option value="">Semua Status</option>
                     <option value="belum">Belum terkirim</option>
@@ -69,8 +70,9 @@
                             $statusUi = $isDone ? 'Selesai' : 'Belum terkirim';
                             $statusVal = $isDone ? 'selesai' : 'belum';
                         @endphp
-                        <tr class="text-center" data-status="{{ $statusVal }}" data-diantar="{{ $diantarTs }}"
-                            data-terkirim="{{ $terkirimTs }}">
+                        <tr class="text-center delivery-row" data-status="{{ $statusVal }}" data-diantar="{{ $diantarTs }}"
+                            data-terkirim="{{ $terkirimTs }}"
+                            data-search="{{ strtolower($d->no_delivery . ' ' . $d->no_transaction . ' ' . ($d->kurir->username ?? '') . ' ' . ($d->transaction->kecamatan->name ?? '') . ' ' . ($d->transaction->kelurahan->name ?? '')) }}">
                             <td>{{ $d->no_delivery }}</td>
                             <td>{{ $d->no_transaction }}</td>
                             <td>{{ $d->kurir->username ?? '-' }}</td>
@@ -121,6 +123,7 @@
 
             const rows = Array.from(tbody.querySelectorAll('tr'));
             const els = {
+                search: document.getElementById('deliverySearch'),
                 st: document.getElementById('deliveryStatus'),
                 so: document.getElementById('deliverySort'),
             };
@@ -136,13 +139,18 @@
             }
 
             window.applyDeliveryFilters = function() {
+                const searchText = (els.search?.value || '').trim().toLowerCase();
                 const st = (els.st?.value || '').trim().toLowerCase(); // '', 'belum', 'selesai'
                 const so = els.so?.value || ''; // '', 'diantar_asc', 'terkirim_desc', ...
 
                 rows.forEach(tr => {
                     const status = (tr.dataset.status || '').toLowerCase();
+                    const searchData = (tr.dataset.search || '').toLowerCase();
+                    
+                    const matchSearch = !searchText || searchData.includes(searchText);
                     const matchStatus = !st || status === st;
-                    tr.style.display = matchStatus ? '' : 'none';
+                    
+                    tr.style.display = (matchSearch && matchStatus) ? '' : 'none';
                 });
 
                 if (so) {
@@ -153,12 +161,14 @@
             };
 
             window.resetDeliveryFilters = function() {
+                if (els.search) els.search.value = '';
                 if (els.st) els.st.value = '';
                 if (els.so) els.so.value = '';
                 rows.forEach(tr => tr.style.display = '');
             };
 
-            ['change'].forEach(evt => {
+            ['input', 'change'].forEach(evt => {
+                els.search?.addEventListener(evt, applyDeliveryFilters);
                 els.st?.addEventListener(evt, applyDeliveryFilters);
                 els.so?.addEventListener(evt, applyDeliveryFilters);
             });
