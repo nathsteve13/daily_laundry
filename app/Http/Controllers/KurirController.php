@@ -100,7 +100,7 @@ class KurirController extends Controller
                 'no_transaction'   => 'required',
                 'kurir_id'         => 'required|exists:users,id',
                 'tanggal_diantar'  => 'required|date',
-                'tanggal_terkirim' => 'required|date',
+                'tanggal_terkirim' => 'nullable|date',
                 'bukti_terima'     => 'nullable|file|mimes:jpg,jpeg,png|max:40000',
             ]);
 
@@ -128,6 +128,11 @@ class KurirController extends Controller
                 $filename = 'bukti/' . uniqid() . '.' . $request->file('bukti_terima')->getClientOriginalExtension();
                 $request->file('bukti_terima')->move(public_path('bukti'), $filename);
                 $validated['bukti_terima'] = $filename;
+            }
+
+            // Hapus tanggal_terkirim dari validated jika kosong
+            if (empty($validated['tanggal_terkirim'])) {
+                unset($validated['tanggal_terkirim']);
             }
 
             $delivery->update($validated);
@@ -259,7 +264,7 @@ class KurirController extends Controller
                 'no_transaction' => 'required',
                 'kurir_id' => 'required|exists:users,id',
                 'tanggal_pengambilan' => 'required|date',
-                'tanggal_diambil' => 'required|date',
+                'tanggal_diambil' => 'nullable|date',
                 'bukti_ambil' => 'nullable|image|max:2048',
             ]);
 
@@ -289,12 +294,18 @@ class KurirController extends Controller
                 $pickup->bukti_pengambilan = $filename;
             }
 
-            $pickup->update([
+            $updateData = [
                 'no_transaction' => $request->no_transaction,
                 'kurir_id' => $request->kurir_id,
                 'tanggal_pengambilan' => $request->tanggal_pengambilan,
-                'tanggal_diambil' => $request->tanggal_diambil,
-            ]);
+            ];
+
+            // Hanya update tanggal_diambil jika ada nilainya
+            if ($request->filled('tanggal_diambil')) {
+                $updateData['tanggal_diambil'] = $request->tanggal_diambil;
+            }
+
+            $pickup->update($updateData);
 
             DB::commit();
             return redirect()->route('kurir.pengambilan.index')->with('success', 'Data berhasil diperbarui.');
