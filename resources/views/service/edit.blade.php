@@ -3,13 +3,13 @@
 @section('content')
 
     @if ($errors->any())
-    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-        <ul class="list-disc pl-5">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
+        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <ul class="list-disc pl-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
     @endif
 
     <div class="p-6 space-y-6">
@@ -23,19 +23,26 @@
                 @csrf @method('PUT')
                 <div class="mb-3">
                     <label class="form-label">Name</label>
-                    <input type="text" name="name" class="form-control mb-3" value="{{ old('name', $service->name) }}" required>
+                    <input type="text" name="name" class="form-control mb-3" value="{{ old('name', $service->name) }}"
+                        required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Price</label>
-                    <input type="number" step="0.01" name="price" class="form-control mb-3" value="{{ old('price', $service->price) }}" required>
+                    <label class="form-label">Price (Rp)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="number" step="0.01" name="price" class="form-control"
+                            value="{{ old('price', $service->price) }}" required>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Duration</label>
-                    <input type="number" step="0.1" name="duration" class="form-control mb-3" value="{{ old('duration', $service->duration) }}" required>
+                    <input type="number" step="0.1" name="duration" class="form-control mb-3"
+                        value="{{ old('duration', $service->duration) }}" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Unit</label>
-                    <input type="text" name="unit" class="form-control mb-3" value="{{ old('unit', $service->unit) }}" required>
+                    <input type="text" name="unit" class="form-control mb-3" value="{{ old('unit', $service->unit) }}"
+                        required>
                 </div>
                 <div class="flex justify-end gap-2">
                     <a href="{{ route('service-types.index') }}" class="btn btn-outline-secondary notion-btn">Cancel</a>

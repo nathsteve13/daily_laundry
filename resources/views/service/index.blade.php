@@ -66,7 +66,7 @@
                             data-duration="{{ (int) $service->duration }}">
                             <td>{{ $service->id }}</td>
                             <td>{{ $service->name }}</td>
-                            <td>{{ $service->price }}</td>
+                            <td>Rp {{ number_format($service->price, 0, ',', '.') }}</td>
                             <td>{{ $service->duration }}</td>
                             <td>{{ $service->unit }}</td>
                             <td class="text-end d-flex gap-2 justify-end">

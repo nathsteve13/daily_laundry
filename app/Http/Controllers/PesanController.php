@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kecamatan;
+use App\Models\Kelurahan;
 use App\Models\ServiceType;
 use App\Models\OrderRequest;
 use Illuminate\Http\Request;
@@ -14,10 +16,25 @@ class PesanController extends Controller
     {
         try {
             $serviceTypes = ServiceType::all();
-            return view('pesan', compact('serviceTypes'));
+            $kecamatans = Kecamatan::orderBy('name')->get();
+            return view('pesan', compact('serviceTypes', 'kecamatans'));
         } catch (\Throwable $e) {
             report($e);
             return back()->with('error', 'Gagal membuka halaman form.');
+        }
+    }
+
+    public function getKelurahan($kecamatan_id)
+    {
+        try {
+            $kelurahans = Kelurahan::where('kecamatan_id', $kecamatan_id)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+
+            return response()->json($kelurahans);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['error' => 'Gagal mengambil data kelurahan'], 500);
         }
     }
 
@@ -27,6 +44,8 @@ class PesanController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:100',
                 'address' => 'required|string',
+                'kecamatan_id' => 'required|exists:kecamatan,id',
+                'kelurahan_id' => 'required|exists:kelurahan,id',
                 'phone_number' => 'required|string|max:20',
                 'delivery_type' => 'required|in:ambil-kirim,kirim',
                 'details' => 'required|array|min:1',
@@ -44,6 +63,8 @@ class PesanController extends Controller
                 'no_order' => $noOrder,
                 'name' => $validated['name'],
                 'address' => $validated['address'],
+                'kecamatan_id' => $validated['kecamatan_id'],
+                'kelurahan_id' => $validated['kelurahan_id'],
                 'phone_number' => $validated['phone_number'],
                 'delivery_type' => $validated['delivery_type'],
                 'status' => 'diterima',

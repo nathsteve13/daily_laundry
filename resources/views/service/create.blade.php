@@ -3,13 +3,13 @@
 @section('content')
 
     @if ($errors->any())
-    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-        <ul class="list-disc pl-5">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
+        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <ul class="list-disc pl-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
     @endif
 
     <div class="p-6 space-y-6">
@@ -26,12 +26,17 @@
                     <input type="text" name="name" class="form-control mb-3" value="{{ old('name') }}" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Price</label>
-                    <input type="number" step="0.01" name="price" class="form-control mb-3" value="{{ old('price') }}" required>
+                    <label class="form-label">Price (Rp)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="number" step="0.01" name="price" class="form-control" value="{{ old('price') }}"
+                            required>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Duration</label>
-                    <input type="number" step="0.1" name="duration" class="form-control mb-3" value="{{ old('duration') }}" required>
+                    <input type="number" step="0.1" name="duration" class="form-control mb-3"
+                        value="{{ old('duration') }}" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Unit</label>

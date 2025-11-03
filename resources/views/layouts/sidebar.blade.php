@@ -6,7 +6,9 @@
 <aside id="sidebar"
     class="fixed inset-y-0 left-0 z-50 w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
     <div class="p-4">
-        <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">DAILY LAUNDRY</h2>
+        <div class="mb-4 flex items-center justify-center">
+            <img src="{{ asset('assets/img/logo/logo-transaparent.png') }}" alt="Daily Laundry Logo" class="h-12 w-auto" />
+        </div>
         <ul class="space-y-3">
             {{-- Satu blok menu dengan cek role per item --}}
             {{-- Dashboard: admin, kasir, kurir --}}

@@ -67,6 +67,8 @@
                         <th>Nama</th>
                         <th>Telepon</th>
                         <th>Alamat</th>
+                        <th>Kecamatan</th>
+                        <th>Kelurahan</th>
                         <th>Layanan</th>
                         <th>Estimasi</th>
                         <th>Status</th>
@@ -85,6 +87,8 @@
                             <td>{{ $order->name }}</td>
                             <td>{{ $order->phone_number }}</td>
                             <td>{{ $order->address }}</td>
+                            <td>{{ $order->kecamatan->name ?? '-' }}</td>
+                            <td>{{ $order->kelurahan->name ?? '-' }}</td>
                             <td>{{ $order->serviceType->name ?? '-' }}</td>
                             <td>Rp {{ number_format($order->estimated_value, 0) }}</td>
                             <td>

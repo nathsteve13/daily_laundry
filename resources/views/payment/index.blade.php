@@ -69,13 +69,17 @@
                     @foreach ($payments as $p)
                         <tr data-payment="{{ strtolower($p->no_payment) }}"
                             data-transaction="{{ strtolower($p->no_transaction) }}"
-                            data-status="{{ strtolower($p->status) }}" data-total="{{ $totalNum }}"
-                            data-created="{{ $created }}" class="text-center">
+                            data-status="{{ strtolower($p->status) }}" data-total="{{ $p->total }}"
+                            data-created="{{ strtotime($p->created_at) }}" class="text-center">
                             <td>{{ $p->no_payment }}</td>
                             <td>{{ $p->no_transaction }}</td>
-                            <td>{{ $p->total }}</td>
-                            <td>{{ ucfirst($p->status) }}</td>
-                            <td class="text-end d-flex gap-2 justify-end">
+                            <td>Rp {{ number_format($p->total, 0, ',', '.') }}</td>
+                            <td>
+                                <span class="badge bg-{{ $p->status === 'success' ? 'success' : ($p->status === 'failed' ? 'danger' : 'warning') }}">
+                                    {{ ucfirst($p->status) }}
+                                </span>
+                            </td>
+                            <td class="text-end d-flex gap-2 justify-center">
                                 <a href="{{ route('payments.edit', $p->no_payment) }}"
                                     class="btn btn-outline-dark btn-sm notion-btn">Edit</a>
                                 <form action="{{ route('payments.destroy', $p->no_payment) }}" method="POST">

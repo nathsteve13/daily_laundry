@@ -17,7 +17,7 @@ class OrderController extends Controller
     public function index()
     {
         try {
-            $orders = OrderRequest::with('details.serviceType')->latest()->get();
+            $orders = OrderRequest::with(['details.serviceType', 'kecamatan', 'kelurahan'])->latest()->get();
             $customers = Customer::all();
             $serviceTypes = ServiceType::all();
 
@@ -92,6 +92,8 @@ class OrderController extends Controller
                 'discount' => $validated['discount'],
                 'total' => $validated['total'],
                 'users_id' => Auth::id(),
+                'kecamatan_id' => $order->kecamatan_id,
+                'kelurahan_id' => $order->kelurahan_id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

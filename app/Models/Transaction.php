@@ -16,6 +16,8 @@ class Transaction extends Model
         'discount',
         'total',
         'users_id',
+        'kecamatan_id',
+        'kelurahan_id',
     ];
 
     public function user()
@@ -66,5 +68,37 @@ class Transaction extends Model
         return $this->hasMany(TransactionStatus::class, 'no_transaction', 'no_transaction');
     }
 
+    public function kecamatan()
+    {
+        return $this->belongsTo(Kecamatan::class, 'kecamatan_id', 'id');
+    }
 
+    public function kelurahan()
+    {
+        return $this->belongsTo(Kelurahan::class, 'kelurahan_id', 'id');
+    }
+
+    /**
+     * Get the first order request from the first customer
+     */
+    public function getOrderRequest()
+    {
+        return $this->customers->first()?->orderRequests->first();
+    }
+
+    /**
+     * Get kecamatan name from order request
+     */
+    public function getKecamatanName()
+    {
+        return $this->kecamatan->name ?? '-';
+    }
+
+    /**
+     * Get kelurahan name from order request
+     */
+    public function getKelurahanName()
+    {
+        return $this->kelurahan->name ?? '-';
+    }
 }

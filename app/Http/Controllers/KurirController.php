@@ -15,7 +15,7 @@ class KurirController extends Controller
 {
     public function index()
     {
-        $deliveries = DeliveryList::with('kurir')->get();
+        $deliveries = DeliveryList::with(['kurir', 'transaction.kecamatan', 'transaction.kelurahan'])->get();
         return view('kurir.pengantaran', compact('deliveries'));
     }
 
@@ -139,7 +139,7 @@ class KurirController extends Controller
 
     public function pengambilanIndex()
     {
-        $data = PickupList::with(['transaction', 'kurir'])->latest()->get();
+        $data = PickupList::with(['transaction.customers.orderRequests.kecamatan', 'transaction.customers.orderRequests.kelurahan', 'kurir'])->latest()->get();
         return view('kurir.pengambilan', compact('data'));
     }
 

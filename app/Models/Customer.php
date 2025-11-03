@@ -21,4 +21,9 @@ class Customer extends Model
             'no_transaction'
         );
     }
+
+    public function orderRequests()
+    {
+        return $this->hasMany(OrderRequest::class, 'name', 'name');
+    }
 }

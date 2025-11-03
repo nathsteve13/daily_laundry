@@ -43,19 +43,28 @@
 
                         <div class="row mt-4">
                             <div class="col-md-4">
-                                <label class="form-label">Subtotal</label>
-                                <input type="number" name="subtotal_display" id="subtotal_display"
-                                    class="form-control bg-light" readonly>
+                                <label class="form-label">Subtotal (Rp)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" name="subtotal_display" id="subtotal_display"
+                                        class="form-control bg-light" readonly>
+                                </div>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Diskon (Rp)</label>
-                                <input type="number" name="discount" id="discount" class="form-control" step="0.01"
-                                    value="0">
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" name="discount" id="discount" class="form-control"
+                                        step="0.01" value="0">
+                                </div>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Total</label>
-                                <input type="number" name="total_display" id="total_display"
-                                    class="form-control bg-light" readonly>
+                                <label class="form-label">Total (Rp)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" name="total_display" id="total_display"
+                                        class="form-control bg-light" readonly>
+                                </div>
                             </div>
                         </div>
 

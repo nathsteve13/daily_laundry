@@ -17,6 +17,9 @@ Route::get('/', function () {
 Route::get('/pesan', [PesanController::class, 'create'])->name('pesan.create');
 Route::post('/pesan', [PesanController::class, 'store'])->name('pesan.store');
 
+// API untuk dropdown kelurahan
+Route::get('/api/kelurahan/{kecamatan_id}', [PesanController::class, 'getKelurahan'])->name('api.kelurahan');
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');

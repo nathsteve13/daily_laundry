@@ -86,9 +86,9 @@
                                     <span class="text-muted">Unknown Customer</span>
                                 @endif
                             </td>
-                            <td>{{ $t->subtotal }}</td>
-                            <td>{{ $t->discount }}</td>
-                            <td>{{ $t->total }}</td>
+                            <td>Rp {{ number_format($t->subtotal, 0, ',', '.') }}</td>
+                            <td>Rp {{ number_format($t->discount, 0, ',', '.') }}</td>
+                            <td>Rp {{ number_format($t->total, 0, ',', '.') }}</td>
                             <td>{{ $t->users_id }}</td>
                             <td>
                                 @php

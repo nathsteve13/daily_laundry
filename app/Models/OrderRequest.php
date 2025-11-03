@@ -16,11 +16,23 @@ class OrderRequest extends Model
         'name',
         'status',
         'address',
+        'kecamatan_id',
+        'kelurahan_id',
         'phone_number',
         'delivery_type',
         'created_at',
         'updated_at',
     ];
+
+    public function kecamatan()
+    {
+        return $this->belongsTo(Kecamatan::class, 'kecamatan_id', 'id');
+    }
+
+    public function kelurahan()
+    {
+        return $this->belongsTo(Kelurahan::class, 'kelurahan_id', 'id');
+    }
 
     public function serviceType()
     {

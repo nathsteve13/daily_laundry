@@ -48,6 +48,8 @@
                         <th>No. Delivery</th>
                         <th>No. Transaction</th>
                         <th>Kurir</th>
+                        <th>Kecamatan</th>
+                        <th>Kelurahan</th>
                         <th>Tanggal Diantar</th>
                         <th>Tanggal Terkirim</th>
                         <th>Status</th>
@@ -72,6 +74,8 @@
                             <td>{{ $d->no_delivery }}</td>
                             <td>{{ $d->no_transaction }}</td>
                             <td>{{ $d->kurir->username ?? '-' }}</td>
+                            <td>{{ $d->transaction->kecamatan->name ?? '-' }}</td>
+                            <td>{{ $d->transaction->kelurahan->name ?? '-' }}</td>
                             <td>
                                 {{ $d->tanggal_diantar ? \Carbon\Carbon::parse($d->tanggal_diantar)->format('d/m/Y H:i') : '-' }}
                             </td>
@@ -99,7 +103,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted">Belum ada data pengantaran.</td>
+                            <td colspan="9" class="text-center text-muted">Belum ada data</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -1,5 +1,41 @@
 @extends('layouts.app')
 
+@push('styles')
+    <style>
+        /* Select2 Custom Styles for Single Selection */
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.375rem !important;
+            height: 42px !important;
+            padding: 4px 8px !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 32px !important;
+            color: #374151 !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px !important;
+        }
+
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 1px #3b82f6 !important;
+        }
+
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.375rem !important;
+        }
+
+        .select2-dropdown {
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.375rem !important;
+        }
+    </style>
+@endpush
+
 @section('content')
     {{-- Alerts untuk validasi dan session error --}}
     @if ($errors->any())
@@ -42,13 +78,13 @@
 
                 {{-- Row 1: Customers + Tombol Add Customer --}}
                 <div class="mb-5">
-                    <label class="block text-gray-700 font-medium mb-2">Customers</label>
+                    <label class="block text-gray-700 font-medium mb-2">Customer</label>
                     <div class="flex gap-2">
                         <select name="customers_id[]" id="customers_id_select"
-                            class="form-control flex-1 p-2 border border-gray-300 rounded" multiple required>
+                            class="form-control flex-1 p-2 border border-gray-300 rounded" required>
+                            <option value="">-- Pilih Customer --</option>
                             @foreach ($customers as $c)
-                                <option value="{{ $c->id }}"
-                                    {{ collect(old('customers_id'))->contains($c->id) ? 'selected' : '' }}>
+                                <option value="{{ $c->id }}" {{ old('customers_id.0') == $c->id ? 'selected' : '' }}>
                                     {{ $c->name }}
                                 </option>
                             @endforeach
@@ -58,6 +94,7 @@
                             + Add Customer
                         </button>
                     </div>
+                    <small class="text-gray-500">Ketik untuk mencari customer</small>
                     @error('customers_id')
                         <div class="text-red-600 mt-1">{{ $message }}</div>
                     @enderror
@@ -66,32 +103,80 @@
                     @enderror
                 </div>
 
-                {{-- Row 2: Subtotal, Discount, Total --}}
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    {{-- Subtotal --}}
+                {{-- Row Kecamatan & Kelurahan --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                    {{-- Kecamatan --}}
                     <div>
-                        <label class="block text-gray-700 font-medium mb-2">Subtotal</label>
-                        <input type="number" step="0.01" id="subtotal" name="subtotal"
-                            class="w-full p-2 border border-gray-300 rounded bg-gray-100" value="{{ old('subtotal', 0) }}"
-                            readonly>
-                    </div>
-
-                    {{-- Discount --}}
-                    <div>
-                        <label class="block text-gray-700 font-medium mb-2">Discount</label>
-                        <input type="number" step="0.01" id="discount" name="discount"
-                            class="w-full p-2 border border-gray-300 rounded" value="{{ old('discount', 0) }}">
-                        @error('discount')
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-map-marker-alt me-2"></i>Kecamatan
+                        </label>
+                        <select name="kecamatan_id" id="kecamatan_id"
+                            class="form-control w-full p-2 border border-gray-300 rounded" required>
+                            <option value="">-- Pilih Kecamatan Dahulu --</option>
+                            @foreach ($kecamatans as $kec)
+                                <option value="{{ $kec->id }}"
+                                    {{ old('kecamatan_id') == $kec->id ? 'selected' : '' }}>
+                                    {{ $kec->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('kecamatan_id')
                             <div class="text-red-600 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
 
+                    {{-- Kelurahan --}}
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">
+                            <i class="fas fa-map-pin me-2"></i>Kelurahan
+                        </label>
+                        <select name="kelurahan_id" id="kelurahan_id"
+                            class="form-control w-full p-2 border border-gray-300 rounded" required disabled>
+                            <option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>
+                        </select>
+                        @error('kelurahan_id')
+                            <div class="text-red-600 mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+
+                {{-- Row 2: Subtotal, Discount, Total --}}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    {{-- Subtotal --}}
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Subtotal (Rp)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="number" step="0.01" id="subtotal" name="subtotal"
+                                class="form-control bg-gray-100" value="{{ old('subtotal', 0) }}" readonly>
+                        </div>
+                    </div>
+
+                    {{-- Discount --}}
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Discount (%)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">%</span>
+                            <input type="number" step="0.01" id="discount" name="discount_percent" class="form-control"
+                                value="{{ old('discount_percent', 0) }}" min="0" max="100">
+                        </div>
+                        <small class="text-gray-500">Masukkan persentase discount (0-100)</small>
+                        @error('discount_percent')
+                            <div class="text-red-600 mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    {{-- Hidden field untuk discount dalam rupiah (akan dihitung otomatis) --}}
+                    <input type="hidden" id="discount_amount" name="discount" value="0">
+
                     {{-- Total --}}
                     <div>
-                        <label class="block text-gray-700 font-medium mb-2">Total</label>
-                        <input type="number" step="0.01" id="total" name="total"
-                            class="w-full p-2 border border-gray-300 rounded bg-gray-100" value="{{ old('total', 0) }}"
-                            readonly>
+                        <label class="block text-gray-700 font-medium mb-2">Total (Rp)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="number" step="0.01" id="total" name="total"
+                                class="form-control bg-gray-100" value="{{ old('total', 0) }}" readonly>
+                        </div>
                     </div>
                 </div>
 
@@ -125,10 +210,12 @@
 
                         {{-- Line Total --}}
                         <div>
-                            <label class="block text-gray-700 font-medium mb-1">Line Total</label>
-                            <input type="number" step="0.01"
-                                class="line-total w-full p-2 border border-gray-300 rounded bg-gray-100" value="0"
-                                readonly>
+                            <label class="block text-gray-700 font-medium mb-1">Line Total (Rp)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="number" step="0.01" class="line-total form-control bg-gray-100"
+                                    value="0" readonly>
+                            </div>
                         </div>
 
                         {{-- Tombol Hapus Baris --}}
@@ -233,6 +320,46 @@
     {{-- Script untuk perhitungan dan interaksi --}}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Inisialisasi Select2 untuk Customer dropdown dengan search
+            $('#customers_id_select').select2({
+                placeholder: "Pilih atau cari customer...",
+                allowClear: true,
+                width: '100%'
+            });
+
+            // AJAX untuk load kelurahan berdasarkan kecamatan
+            const kecamatanSelect = document.getElementById('kecamatan_id');
+            const kelurahanSelect = document.getElementById('kelurahan_id');
+
+            kecamatanSelect.addEventListener('change', function() {
+                const kecamatanId = this.value;
+
+                // Reset kelurahan
+                kelurahanSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
+
+                if (kecamatanId) {
+                    // Enable kelurahan dropdown
+                    kelurahanSelect.disabled = false;
+
+                    fetch(`/api/kelurahan/${kecamatanId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            data.forEach(kelurahan => {
+                                const option = document.createElement('option');
+                                option.value = kelurahan.id;
+                                option.textContent = kelurahan.name;
+                                kelurahanSelect.appendChild(option);
+                            });
+                        })
+                        .catch(error => console.error('Error:', error));
+                } else {
+                    // Disable kelurahan dropdown jika kecamatan belum dipilih
+                    kelurahanSelect.disabled = true;
+                    kelurahanSelect.innerHTML =
+                        '<option value="">-- Pilih Kecamatan Terlebih Dahulu --</option>';
+                }
+            });
+
             // 1) Mapping service_type_id → price
             const servicePrices = {
                 @foreach ($services as $s)
@@ -262,9 +389,15 @@
                 // Update subtotal
                 document.getElementById('subtotal').value = subtotal.toFixed(2);
 
-                // Update total (subtotal – discount)
-                const discount = parseFloat(document.getElementById('discount').value) || 0;
-                const total = subtotal - discount;
+                // Hitung discount berdasarkan persen
+                const discountPercent = parseFloat(document.getElementById('discount').value) || 0;
+                const discountAmount = (subtotal * discountPercent) / 100;
+
+                // Update hidden field discount amount (dalam rupiah)
+                document.getElementById('discount_amount').value = discountAmount.toFixed(2);
+
+                // Update total (subtotal – discount amount)
+                const total = subtotal - discountAmount;
                 document.getElementById('total').value = total.toFixed(2);
             }
 

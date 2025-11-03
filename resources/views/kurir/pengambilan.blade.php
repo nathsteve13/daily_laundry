@@ -43,6 +43,8 @@
                         <th>No. Pickup</th>
                         <th>No. Transaksi</th>
                         <th>Kurir</th>
+                        <th>Kecamatan</th>
+                        <th>Kelurahan</th>
                         <th>Tanggal Diambil</th>
                         <th>Tanggal Sampai</th>
                         <th>Status</th>
@@ -64,6 +66,8 @@
                             <td>{{ $row->no_pickup }}</td>
                             <td>{{ $row->transaction->no_transaction ?? '-' }}</td>
                             <td>{{ $row->kurir->username ?? '-' }}</td>
+                            <td>{{ $row->transaction->kecamatan->name ?? '-' }}</td>
+                            <td>{{ $row->transaction->kelurahan->name ?? '-' }}</td>
                             <td>{{ $row->tanggal_pengambilan ? date('d/m/Y H:i', strtotime($row->tanggal_pengambilan)) : '-' }}
                             </td>
                             <td>
@@ -90,7 +94,7 @@
 
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted">Belum ada data</td>
+                            <td colspan="9" class="text-center text-muted">Belum ada data</td>
                         </tr>
                     @endforelse
                 </tbody>

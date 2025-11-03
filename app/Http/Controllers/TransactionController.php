@@ -11,6 +11,8 @@ use App\Models\DeliveryList;
 use Illuminate\Http\Request;
 use App\Models\TransactionStatus;
 use Illuminate\Support\Facades\DB;
+use App\Models\Kecamatan;
+use App\Models\Kelurahan;
 
 class TransactionController extends Controller
 {
@@ -147,7 +149,8 @@ class TransactionController extends Controller
     {
         $customers = Customer::all();
         $services = ServiceType::all();
-        return view('transaction.create', compact('customers', 'services'));
+        $kecamatans = Kecamatan::orderBy('name')->get();
+        return view('transaction.create', compact('customers', 'services', 'kecamatans'));
     }
 
     public function store(Request $request)
@@ -155,9 +158,12 @@ class TransactionController extends Controller
         try {
             $validated = $request->validate([
                 'subtotal' => 'required|numeric',
-                'discount' => 'required|numeric',
+                'discount_percent' => 'nullable|numeric|min:0|max:100',
+                'discount' => 'nullable|numeric',
                 'total' => 'required|numeric',
                 'users_id' => 'required|integer|exists:users,id',
+                'kecamatan_id' => 'required|integer|exists:kecamatan,id',
+                'kelurahan_id' => 'required|integer|exists:kelurahan,id',
                 'customers_id' => 'required|array',
                 'customers_id.*' => 'integer|exists:customers,id',
                 'details' => 'required|array',
@@ -166,6 +172,9 @@ class TransactionController extends Controller
                 'details.*.pickup' => 'nullable|boolean',
                 'status.status' => 'required|in:pending,proccessed,ready,done',
             ]);
+
+            // Set discount ke 0 jika null
+            $validated['discount'] = $validated['discount'] ?? 0;
 
             DB::transaction(function () use ($validated) {
                 $datePrefix = now()->format('dmY');
@@ -190,6 +199,8 @@ class TransactionController extends Controller
                     'discount' => $validated['discount'],
                     'total' => $validated['total'],
                     'users_id' => $validated['users_id'],
+                    'kecamatan_id' => $validated['kecamatan_id'],
+                    'kelurahan_id' => $validated['kelurahan_id'],
                 ]);
 
                 $transaction->customers()->attach($validated['customers_id']);
@@ -224,7 +235,15 @@ class TransactionController extends Controller
             $transaction = Transaction::with(['customers', 'details', 'status'])->findOrFail($no_transaction);
             $customers = Customer::all();
             $services = ServiceType::all();
-            return view('transaction.edit', compact('transaction', 'customers', 'services'));
+            $kecamatans = Kecamatan::orderBy('name')->get();
+            $kelurahans = [];
+
+            // Jika transaction sudah punya kecamatan, load kelurahan-nya
+            if ($transaction->kecamatan_id) {
+                $kelurahans = Kelurahan::where('kecamatan_id', $transaction->kecamatan_id)->orderBy('name')->get();
+            }
+
+            return view('transaction.edit', compact('transaction', 'customers', 'services', 'kecamatans', 'kelurahans'));
         } catch (\Exception $e) {
             return redirect()->route('transactions.index')->with('error', 'Transaction not found');
         }
@@ -235,15 +254,21 @@ class TransactionController extends Controller
         try {
             $validated = $request->validate([
                 'subtotal' => 'required|numeric',
-                'discount' => 'required|numeric',
+                'discount_percent' => 'nullable|numeric|min:0|max:100',
+                'discount' => 'nullable|numeric',
                 'total' => 'required|numeric',
                 'users_id' => 'required|integer|exists:users,id',
+                'kecamatan_id' => 'required|integer|exists:kecamatan,id',
+                'kelurahan_id' => 'required|integer|exists:kelurahan,id',
                 'details' => 'required|array',
                 'details.*.pickup' => 'required|boolean',
                 'details.*.value_per_unit' => 'required|numeric',
                 'details.*.service_type_id' => 'required|integer|exists:service_type,id',
                 'status.status' => 'required|in:pending,proccessed,ready,done',
             ]);
+
+            // Set discount ke 0 jika null
+            $validated['discount'] = $validated['discount'] ?? 0;
 
             DB::transaction(function () use ($no_transaction, $validated) {
                 $transaction = Transaction::findOrFail($no_transaction);
@@ -253,6 +278,8 @@ class TransactionController extends Controller
                     'discount' => $validated['discount'],
                     'total' => $validated['total'],
                     'users_id' => $validated['users_id'],
+                    'kecamatan_id' => $validated['kecamatan_id'],
+                    'kelurahan_id' => $validated['kelurahan_id'],
                 ]);
 
                 $transaction->details()->delete();

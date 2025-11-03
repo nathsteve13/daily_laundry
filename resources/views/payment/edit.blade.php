@@ -3,13 +3,13 @@
 @section('content')
 
     @if ($errors->any())
-    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-        <ul class="list-disc pl-5">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
+        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <ul class="list-disc pl-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
     @endif
 
     <div class="p-6 space-y-6">
@@ -28,22 +28,27 @@
                 <div class="mb-3">
                     <label class="form-label">No. Transaction</label>
                     <select name="no_transaction" class="form-control mb-3" required>
-                        @foreach($transactions as $t)
-                            <option value="{{ $t->no_transaction }}" {{ old('no_transaction', $payment->no_transaction)==$t->no_transaction?'selected':'' }}>
+                        @foreach ($transactions as $t)
+                            <option value="{{ $t->no_transaction }}"
+                                {{ old('no_transaction', $payment->no_transaction) == $t->no_transaction ? 'selected' : '' }}>
                                 {{ $t->no_transaction }}
                             </option>
                         @endforeach
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Total</label>
-                    <input type="number" step="0.01" name="total" class="form-control mb-3" value="{{ old('total', $payment->total) }}" required>
+                    <label class="form-label">Total (Rp)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="number" step="0.01" name="total" class="form-control"
+                            value="{{ old('total', $payment->total) }}" required>
+                    </div>
                 </div>
                 <div class="mb-4">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-control">
-                        @foreach(['pending','failed','success'] as $st)
-                            <option value="{{ $st }}" {{ old('status', $payment->status)==$st?'selected':'' }}>
+                        @foreach (['pending', 'failed', 'success'] as $st)
+                            <option value="{{ $st }}" {{ old('status', $payment->status) == $st ? 'selected' : '' }}>
                                 {{ ucfirst($st) }}
                             </option>
                         @endforeach

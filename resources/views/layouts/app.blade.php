@@ -17,6 +17,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- jQuery (required for Select2) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Select2 CSS & JS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+        rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <!-- FullCalendar CSS -->
     @stack('styles')
 
@@ -61,9 +71,17 @@
             margin-bottom: 0;
         }
 
-        .text-admin { color: #e74c3c; }
-        .text-kurir { color: #27ae60; }
-        .text-kasir { color: #3498db; }
+        .text-admin {
+            color: #e74c3c;
+        }
+
+        .text-kurir {
+            color: #27ae60;
+        }
+
+        .text-kasir {
+            color: #3498db;
+        }
     </style>
 </head>
 
@@ -72,43 +90,43 @@
         @include('layouts.sidebar')
         <div class="flex-1 flex flex-col">
             @include('layouts.navigation')
-            
+
             <!-- Welcome Message Section -->
             @auth
-            <div class="welcome-container px-6 py-4">
-                <div class="welcome-banner">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            @if(auth()->user()->role === 'admin')
-                                <h1 class="welcome-title">Welcome Admin!</h1>
-                                <p class="welcome-subtitle">Selamat datang di Dashboard Admin Daily Laundry</p>
-                            @elseif(auth()->user()->role === 'kurir')
-                                <h1 class="welcome-title">Welcome Kurir!</h1>
-                                <p class="welcome-subtitle">Selamat datang di Dashboard Kurir Daily Laundry</p>
-                            @elseif(auth()->user()->role === 'kasir')
-                                <h1 class="welcome-title">Welcome Kasir!</h1>
-                                <p class="welcome-subtitle">Selamat datang di Dashboard Kasir Daily Laundry</p>
-                            @else
-                                <h1 class="welcome-title">Welcome!</h1>
-                                <p class="welcome-subtitle">Selamat datang di Daily Laundry Management System</p>
-                            @endif
-                        </div>
-                        <div class="text-end">
-                            <small class="opacity-75">Logged in as: 
-                                <span class="fw-bold 
-                                    @if(auth()->user()->role === 'admin') text-admin
+                <div class="welcome-container px-6 py-4">
+                    <div class="welcome-banner">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                @if (auth()->user()->role === 'admin')
+                                    <h1 class="welcome-title">Welcome Admin!</h1>
+                                    <p class="welcome-subtitle">Selamat datang di Dashboard Admin Daily Laundry</p>
+                                @elseif(auth()->user()->role === 'kurir')
+                                    <h1 class="welcome-title">Welcome Kurir!</h1>
+                                    <p class="welcome-subtitle">Selamat datang di Dashboard Kurir Daily Laundry</p>
+                                @elseif(auth()->user()->role === 'kasir')
+                                    <h1 class="welcome-title">Welcome Kasir!</h1>
+                                    <p class="welcome-subtitle">Selamat datang di Dashboard Kasir Daily Laundry</p>
+                                @else
+                                    <h1 class="welcome-title">Welcome!</h1>
+                                    <p class="welcome-subtitle">Selamat datang di Daily Laundry Management System</p>
+                                @endif
+                            </div>
+                            <div class="text-end">
+                                <small class="opacity-75">Logged in as:
+                                    <span
+                                        class="fw-bold
+                                    @if (auth()->user()->role === 'admin') text-admin
                                     @elseif(auth()->user()->role === 'kurir') text-kurir
-                                    @elseif(auth()->user()->role === 'kasir') text-kasir
-                                    @endif">
-                                    {{ ucfirst(auth()->user()->role) }}
-                                </span>
-                            </small>
-                            <br>
-                            <small class="opacity-75">{{ auth()->user()->name }}</small>
+                                    @elseif(auth()->user()->role === 'kasir') text-kasir @endif">
+                                        {{ ucfirst(auth()->user()->role) }}
+                                    </span>
+                                </small>
+                                <br>
+                                <small class="opacity-75">{{ auth()->user()->name }}</small>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
             @endauth
 
             <main class="flex-1 px-6 pb-6">
