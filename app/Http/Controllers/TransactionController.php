@@ -77,7 +77,7 @@ class TransactionController extends Controller
                     'no_transaction'      => $validated['no_transaction'],
                     'kurir_id'            => $validated['kurir_id'],
                     'tanggal_pengambilan' => $validated['tanggal_pengambilan'] ?? now(),
-                    'tanggal_diambil'     => $validated['tanggal_pengambilan'] ?? now(), // bisa ubah sesuai alurmu
+                    'tanggal_diambil'     => null,
                     'bukti_pengambilan'   => null
                 ]);
             } elseif ($validated['jenis'] === 'terima') {
@@ -92,7 +92,7 @@ class TransactionController extends Controller
                     'no_transaction'   => $validated['no_transaction'],
                     'kurir_id'         => $validated['kurir_id'],
                     'tanggal_diantar'  => $validated['tanggal_pengiriman'] ?? now(),
-                    'tanggal_terkirim' => $validated['tanggal_pengiriman'] ?? now(),
+                    'tanggal_terkirim' => null,
                     'bukti_terima'     => null
                 ]);
             }
@@ -261,7 +261,7 @@ class TransactionController extends Controller
                 'kecamatan_id' => 'required|integer|exists:kecamatan,id',
                 'kelurahan_id' => 'required|integer|exists:kelurahan,id',
                 'details' => 'required|array',
-                'details.*.pickup' => 'required|boolean',
+                'details.*.pickup' => 'nullable|boolean',
                 'details.*.value_per_unit' => 'required|numeric',
                 'details.*.service_type_id' => 'required|integer|exists:service_type,id',
                 'status.status' => 'required|in:pending,proccessed,ready,done',
@@ -285,7 +285,13 @@ class TransactionController extends Controller
                 $transaction->details()->delete();
 
                 foreach ($validated['details'] as $detail) {
-                    $transaction->details()->create($detail);
+                    $pickup = isset($detail['pickup']) ? (bool) $detail['pickup'] : false;
+
+                    $transaction->details()->create([
+                        'service_type_id' => $detail['service_type_id'],
+                        'value_per_unit' => $detail['value_per_unit'],
+                        'pickup' => $pickup,
+                    ]);
                 }
 
                 $transaction->status()->update(['status' => $validated['status']['status']]);
@@ -293,7 +299,8 @@ class TransactionController extends Controller
 
             return redirect()->route('transactions.index')->with('success', 'Transaction updated');
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Failed to update transaction');
+            dd($e->getMessage());
+            return back()->withInput()->with('error', 'Failed to update transaction: ' . $e->getMessage());
         }
     }
 
