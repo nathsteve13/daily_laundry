@@ -25,26 +25,63 @@
     @endif
 
     <div class="p-6 space-y-6">
+        <!-- Statistik Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card notion-box border-0">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Total Transaksi</h6>
+                        <h3 class="mb-0">{{ $stats['total'] }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card notion-box border-0">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Dengan Pengambilan</h6>
+                        <h3 class="mb-0 text-warning">{{ $stats['with_pickup'] }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card notion-box border-0">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Dengan Pengantaran</h6>
+                        <h3 class="mb-0 text-primary">{{ $stats['with_delivery'] }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card notion-box border-0">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Selesai Lengkap</h6>
+                        <h3 class="mb-0 text-success">{{ $stats['completed'] }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="bg-light p-4 rounded mb-3">
             <form id="trxClientFilter" class="d-flex gap-2 flex-wrap" onsubmit="return false;">
-                <input id="trxSearch" type="text" class="form-control" placeholder="Cari nama customer…"
-                    style="max-width:240px">
+                <input id="trxSearch" type="text" class="form-control"
+                    placeholder="🔍 Cari transaksi, customer, lokasi..." style="max-width:280px">
                 <select id="trxStatus" class="form-select" style="max-width:200px">
                     <option value="">Semua Status</option>
                     @foreach (['pending', 'pickup', 'proccessed', 'ready', 'delivered', 'done'] as $s)
                         <option value="{{ $s }}">{{ ucfirst($s) }}</option>
                     @endforeach
                 </select>
-                <input id="dateFrom" type="datetime-local" class="form-control" style="max-width:220px">
-                <input id="dateTo" type="datetime-local" class="form-control" style="max-width:220px">
+                <input id="dateFrom" type="datetime-local" class="form-control" style="max-width:220px"
+                    placeholder="Dari tanggal">
+                <input id="dateTo" type="datetime-local" class="form-control" style="max-width:220px"
+                    placeholder="Sampai tanggal">
                 <select id="trxSort" class="form-select" style="max-width:200px">
                     <option value="">Urutkan</option>
                     <option value="asc">Terlama</option>
                     <option value="desc">Terbaru</option>
                 </select>
-                <button type="button" class="btn btn-primary" onclick="applyTrxFilters()">Terapkan</button>
                 <button type="button" class="btn btn-secondary" onclick="resetTrxFilters()">Reset</button>
-                <button type="button" class="btn btn-success" onclick="exportFilteredToCSV()">Ekspor Excel</button>
+                <button type="button" class="btn btn-success" onclick="exportFilteredToCSV()">📊 Ekspor Excel</button>
             </form>
         </div>
 
@@ -62,38 +99,159 @@
                     <tr class="text-muted text-uppercase small text-center">
                         <th>No. Transaction</th>
                         <th>Customer</th>
-                        <th>Subtotal</th>
+                        <th>Lokasi</th>
+                        <th></th>Subtotal</th>
                         <th>Discount</th>
                         <th>Total</th>
-                        <th>User ID</th>
+                        <th>Pengambilan</th>
+                        <th>Pengantaran</th>
+                        <th>Durasi Proses</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @php
+                        // Helper function untuk format durasi
+                        $formatDuration = function ($minutes) {
+                            if (!$minutes) {
+                                return '-';
+                            }
+                            $hours = floor($minutes / 60);
+                            $mins = $minutes % 60;
+                            $days = floor($hours / 24);
+                            $hours = $hours % 24;
+
+                            $parts = [];
+                            if ($days > 0) {
+                                $parts[] = "{$days}h";
+                            }
+                            if ($hours > 0) {
+                                $parts[] = "{$hours}j";
+                            }
+                            if ($mins > 0 || empty($parts)) {
+                                $parts[] = "{$mins}m";
+                            }
+
+                            return implode(' ', $parts);
+                        };
+                    @endphp
+
                     @foreach ($transactions as $t)
                         @php
                             $latestStatus = $t->transactionStatus->sortByDesc('created_at')->first();
+                            $pickup = $t->pickupLists->first();
+                            $delivery = $t->deliveryLists->first();
+
+                            // Hitung durasi pengambilan
+                            $pickupDuration = null;
+                            if ($pickup && $pickup->tanggal_pengambilan && $pickup->tanggal_diambil) {
+                                $start = \Carbon\Carbon::parse($pickup->tanggal_pengambilan);
+                                $end = \Carbon\Carbon::parse($pickup->tanggal_diambil);
+                                $pickupDuration = $start->diffInMinutes($end);
+                            }
+
+                            // Hitung durasi pengantaran
+                            $deliveryDuration = null;
+                            if ($delivery && $delivery->tanggal_diantar && $delivery->tanggal_terkirim) {
+                                $start = \Carbon\Carbon::parse($delivery->tanggal_diantar);
+                                $end = \Carbon\Carbon::parse($delivery->tanggal_terkirim);
+                                $deliveryDuration = $start->diffInMinutes($end);
+                            }
+
+                            // Total durasi proses (dari pickup sampai delivery selesai)
+                            $totalDuration = null;
+                            if ($pickup && $pickup->tanggal_pengambilan && $delivery && $delivery->tanggal_terkirim) {
+                                $start = \Carbon\Carbon::parse($pickup->tanggal_pengambilan);
+                                $end = \Carbon\Carbon::parse($delivery->tanggal_terkirim);
+                                $totalDuration = $start->diffInMinutes($end);
+                            }
+
+                            $searchData = strtolower(
+                                $t->no_transaction .
+                                    ' ' .
+                                    ($t->customers->first()->name ?? '') .
+                                    ' ' .
+                                    ($t->kecamatan->name ?? '') .
+                                    ' ' .
+                                    ($t->kelurahan->name ?? ''),
+                            );
                         @endphp
                         <tr class="text-center" data-created="{{ $t->created_at->timestamp }}"
                             data-customer="{{ strtolower(optional($t->customers->first())->name ?? '') }}"
-                            data-status="{{ strtolower($latestStatus?->status ?? 'unknown') }}">
-                            <td>{{ $t->no_transaction }}</td>
+                            data-status="{{ strtolower($latestStatus?->status ?? 'unknown') }}"
+                            data-search="{{ $searchData }}">
+                            <td class="fw-bold">{{ $t->no_transaction }}</td>
                             <td>
                                 @if ($t->customers && $t->customers->isNotEmpty())
                                     {{ $t->customers->first()->name }}
                                 @else
-                                    <span class="text-muted">Unknown Customer</span>
+                                    <span class="text-muted">-</span>
                                 @endif
+                            </td>
+                            <td class="text-start">
+                                <small>
+                                    <strong>Kec:</strong> {{ $t->kecamatan->name ?? '-' }}<br>
+                                    <strong>Kel:</strong> {{ $t->kelurahan->name ?? '-' }}
+                                </small>
                             </td>
                             <td>Rp {{ number_format($t->subtotal, 0, ',', '.') }}</td>
                             <td>Rp {{ number_format($t->discount, 0, ',', '.') }}</td>
-                            <td>Rp {{ number_format($t->total, 0, ',', '.') }}</td>
-                            <td>{{ $t->users_id }}</td>
+                            <td class="fw-bold">Rp {{ number_format($t->total, 0, ',', '.') }}</td>
                             <td>
-                                @php
-                                    $latestStatus = $t->transactionStatus->sortByDesc('created_at')->first();
-                                @endphp
+                                @if ($pickup)
+                                    <div class="text-start">
+                                        <small>
+                                            <strong>Kurir:</strong> {{ $pickup->kurir->username ?? '-' }}<br>
+                                            <strong>Dijadwalkan:</strong>
+                                            {{ \Carbon\Carbon::parse($pickup->tanggal_pengambilan)->format('d/m H:i') }}<br>
+                                            @if ($pickup->tanggal_diambil)
+                                                <strong>Selesai:</strong>
+                                                {{ \Carbon\Carbon::parse($pickup->tanggal_diambil)->format('d/m H:i') }}<br>
+                                                <span class="badge bg-success">✓ Selesai
+                                                    ({{ $formatDuration($pickupDuration) }})</span>
+                                            @else
+                                                <span class="badge bg-warning">⏳ Proses</span>
+                                            @endif
+                                        </small>
+                                    </div>
+                                @else
+                                    <span class="text-muted">Belum ada</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if ($delivery)
+                                    <div class="text-start">
+                                        <small>
+                                            <strong>Kurir:</strong> {{ $delivery->kurir->username ?? '-' }}<br>
+                                            <strong>Dijadwalkan:</strong>
+                                            {{ \Carbon\Carbon::parse($delivery->tanggal_diantar)->format('d/m H:i') }}<br>
+                                            @if ($delivery->tanggal_terkirim)
+                                                <strong>Selesai:</strong>
+                                                {{ \Carbon\Carbon::parse($delivery->tanggal_terkirim)->format('d/m H:i') }}<br>
+                                                <span class="badge bg-success">✓ Terkirim
+                                                    ({{ $formatDuration($deliveryDuration) }})</span>
+                                            @else
+                                                <span class="badge bg-warning">⏳ Dalam Perjalanan</span>
+                                            @endif
+                                        </small>
+                                    </div>
+                                @else
+                                    <span class="text-muted">Belum ada</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if ($totalDuration)
+                                    <div class="badge bg-info text-white">
+                                        {{ $formatDuration($totalDuration) }}
+                                    </div>
+                                    <br>
+                                    <small class="text-muted">Total waktu</small>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
+                            <td>
                                 <span id="status-{{ $t->no_transaction }}"
                                     class="badge bg-{{ match ($latestStatus?->status) {
                                         'pending' => 'secondary',
@@ -110,17 +268,21 @@
                                     </a>
                                 </span>
                             </td>
-                            <td class="text-end d-flex gap-2 justify-center">
-                                <a href="{{ route('transactions.edit', $t->no_transaction) }}"
-                                    class="btn btn-outline-dark btn-sm notion-btn">Edit</a>
-                                <form action="{{ route('transactions.destroy', $t->no_transaction) }}" method="POST">
-                                    @csrf @method('DELETE')
-                                    <button class="btn btn-outline-dark btn-sm notion-btn"
-                                        onclick="return confirm('Delete this transaction?')">Delete</button>
-                                </form>
-                                <a href="#" class="btn btn-outline-primary btn-sm"
-                                    onclick="openAssignModal('{{ $t->no_transaction }}')">Assign Kurir</a>
-
+                            <td class="text-center">
+                                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                                    <a href="{{ route('transactions.edit', $t->no_transaction) }}"
+                                        class="btn btn-outline-dark btn-sm notion-btn">Edit</a>
+                                    <form action="{{ route('transactions.destroy', $t->no_transaction) }}"
+                                        method="POST">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-outline-danger btn-sm notion-btn"
+                                            onclick="return confirm('Delete this transaction?')">Delete</button>
+                                    </form>
+                                    @if (!$pickup || !$delivery)
+                                        <a href="#" class="btn btn-outline-primary btn-sm"
+                                            onclick="openAssignModal('{{ $t->no_transaction }}')">Assign Kurir</a>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @endforeach
@@ -261,11 +423,11 @@
                 const so = els.so?.value || '';
 
                 rows.forEach(tr => {
-                    const name = tr.dataset.customer || '';
+                    const searchData = tr.dataset.search || '';
                     const status = tr.dataset.status || '';
                     const created = parseInt(tr.dataset.created || '0', 10);
 
-                    const matchText = !q || name.includes(q);
+                    const matchText = !q || searchData.includes(q);
                     const matchStatus = !st || status === st;
                     const afterFrom = !from || created >= from;
                     const beforeTo = !to || created <= to;

@@ -54,6 +54,7 @@
                         <th>Kelurahan</th>
                         <th>Tanggal Diantar</th>
                         <th>Tanggal Terkirim</th>
+                        <th>Durasi</th>
                         <th>Status</th>
                         <th>Aksi</th>
                     </tr>
@@ -70,6 +71,34 @@
                             $isDone = !empty($d->tanggal_terkirim);
                             $statusUi = $isDone ? 'Selesai' : 'Belum terkirim';
                             $statusVal = $isDone ? 'selesai' : 'belum';
+
+                            // Hitung durasi pengantaran
+                            $duration = null;
+                            $durationText = '-';
+                            if ($d->tanggal_diantar && $d->tanggal_terkirim) {
+                                $start = \Carbon\Carbon::parse($d->tanggal_diantar);
+                                $end = \Carbon\Carbon::parse($d->tanggal_terkirim);
+                                $duration = $start->diffInMinutes($end);
+
+                                // Format durasi
+                                $hours = floor($duration / 60);
+                                $mins = $duration % 60;
+                                $days = floor($hours / 24);
+                                $hours = $hours % 24;
+
+                                $parts = [];
+                                if ($days > 0) {
+                                    $parts[] = "{$days} hari";
+                                }
+                                if ($hours > 0) {
+                                    $parts[] = "{$hours} jam";
+                                }
+                                if ($mins > 0 || empty($parts)) {
+                                    $parts[] = "{$mins} menit";
+                                }
+
+                                $durationText = implode(' ', $parts);
+                            }
                         @endphp
                         <tr class="text-center delivery-row" data-status="{{ $statusVal }}"
                             data-diantar="{{ $diantarTs }}" data-terkirim="{{ $terkirimTs }}"
@@ -90,23 +119,35 @@
                                 @endif
                             </td>
                             <td>
+                                @if ($isDone && $duration !== null)
+                                    <span class="badge bg-info text-white">
+                                        ⏱️ {{ $durationText }}
+                                    </span>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
+                            <td>
                                 <span class="badge {{ $isDone ? 'bg-success' : 'bg-warning' }}">
                                     {{ $statusUi }}
                                 </span>
                             </td>
-                            <td class="text-end d-flex gap-2 justify-center text-center">
-                                <a href="{{ route('kurir.pengantaran.edit', $d->no_delivery) }}"
-                                    class="btn btn-outline-dark btn-sm notion-btn">Finish</a>
-                                <form action="{{ route('kurir.pengantaran.destroy', $d->no_delivery) }}" method="POST">
-                                    @csrf @method('DELETE')
-                                    <button class="btn btn-outline-dark btn-sm notion-btn"
-                                        onclick="return confirm('Hapus pengantaran ini?')">Delete</button>
-                                </form>
+                            <td class="text-center">
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <a href="{{ route('kurir.pengantaran.edit', $d->no_delivery) }}"
+                                        class="btn btn-outline-dark btn-sm notion-btn">Finish</a>
+                                    <form action="{{ route('kurir.pengantaran.destroy', $d->no_delivery) }}"
+                                        method="POST">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-outline-dark btn-sm notion-btn"
+                                            onclick="return confirm('Hapus pengantaran ini?')">Delete</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="text-center text-muted">Belum ada data</td>
+                            <td colspan="10" class="text-center text-muted">Belum ada data</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -47,8 +47,9 @@
                         <th>Kurir</th>
                         <th>Kecamatan</th>
                         <th>Kelurahan</th>
-                        <th>Tanggal Diambil</th>
-                        <th>Tanggal Sampai</th>
+                        <th>Tanggal Dijadwalkan</th>
+                        <th>Tanggal Selesai</th>
+                        <th>Durasi</th>
                         <th>Status</th>
                         <th>Aksi</th>
                     </tr>
@@ -58,10 +59,38 @@
                     @forelse($data as $row)
                         @php
                             $isDone = !empty($row->tanggal_diambil);
-                            $statusUi = $isDone ? 'Selesai' : 'Belum diantar';
+                            $statusUi = $isDone ? 'Selesai' : 'Belum selesai';
                             $statusVal = $isDone ? 'selesai' : 'belum';
                             $ambilTs = $row->tanggal_pengambilan ? strtotime($row->tanggal_pengambilan) : 0;
                             $sampaiTs = $row->tanggal_diambil ? strtotime($row->tanggal_diambil) : 0;
+
+                            // Hitung durasi pengambilan
+                            $duration = null;
+                            $durationText = '-';
+                            if ($row->tanggal_pengambilan && $row->tanggal_diambil) {
+                                $start = \Carbon\Carbon::parse($row->tanggal_pengambilan);
+                                $end = \Carbon\Carbon::parse($row->tanggal_diambil);
+                                $duration = $start->diffInMinutes($end);
+
+                                // Format durasi
+                                $hours = floor($duration / 60);
+                                $mins = $duration % 60;
+                                $days = floor($hours / 24);
+                                $hours = $hours % 24;
+
+                                $parts = [];
+                                if ($days > 0) {
+                                    $parts[] = "{$days} hari";
+                                }
+                                if ($hours > 0) {
+                                    $parts[] = "{$hours} jam";
+                                }
+                                if ($mins > 0 || empty($parts)) {
+                                    $parts[] = "{$mins} menit";
+                                }
+
+                                $durationText = implode(' ', $parts);
+                            }
                         @endphp
                         <tr class="text-center pickup-row" data-status="{{ $statusVal }}"
                             data-ambil="{{ $ambilTs }}" data-sampai="{{ $sampaiTs }}"
@@ -77,27 +106,38 @@
                                 @if ($row->tanggal_diambil)
                                     {{ date('d/m/Y H:i', strtotime($row->tanggal_diambil)) }}
                                 @else
-                                    <span class="text-muted">Belum diantar</span>
+                                    <span class="text-muted">Belum selesai</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if ($isDone && $duration !== null)
+                                    <span class="badge bg-info text-white">
+                                        ⏱️ {{ $durationText }}
+                                    </span>
+                                @else
+                                    <span class="text-muted">-</span>
                                 @endif
                             </td>
                             <td>
                                 <span class="badge {{ $isDone ? 'bg-success' : 'bg-warning' }}">{{ $statusUi }}</span>
                             </td>
                             <td>
-                                <a href="{{ route('kurir.pengambilan.edit', $row->no_pickup) }}"
-                                    class="btn btn-outline-dark btn-sm notion-btn">Finish</a>
-                                <form action="{{ route('kurir.pengambilan.destroy', $row->no_pickup) }}" method="POST"
-                                    style="display:inline;">
-                                    @csrf @method('DELETE')
-                                    <button class="btn btn-outline-dark btn-sm notion-btn"
-                                        onclick="return confirm('Hapus data ini?')">Hapus</button>
-                                </form>
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <a href="{{ route('kurir.pengambilan.edit', $row->no_pickup) }}"
+                                        class="btn btn-outline-dark btn-sm notion-btn">Finish</a>
+                                    <form action="{{ route('kurir.pengambilan.destroy', $row->no_pickup) }}" method="POST"
+                                        style="display:inline;">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-outline-dark btn-sm notion-btn"
+                                            onclick="return confirm('Hapus data ini?')">Hapus</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
 
                     @empty
                         <tr>
-                            <td colspan="9" class="text-center text-muted">Belum ada data</td>
+                            <td colspan="10" class="text-center text-muted">Belum ada data</td>
                         </tr>
                     @endforelse
                 </tbody>

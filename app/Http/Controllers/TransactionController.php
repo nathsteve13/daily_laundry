@@ -19,7 +19,15 @@ class TransactionController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Transaction::with(['transactionStatus', 'customers']);
+            $query = Transaction::with([
+                'transactionStatus',
+                'customers',
+                'kecamatan',
+                'kelurahan',
+                'pickupLists.kurir',
+                'deliveryLists.kurir',
+                'details.serviceType'
+            ]);
 
             if ($request->filled('status')) {
                 $query->whereHas('transactionStatus', function ($q) use ($request) {
@@ -28,8 +36,18 @@ class TransactionController extends Controller
             }
 
             if ($request->filled('search')) {
-                $query->whereHas('customers', function ($q) use ($request) {
-                    $q->where('name', 'like', '%' . $request->search . '%');
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('no_transaction', 'like', "%{$search}%")
+                        ->orWhereHas('customers', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('kecamatan', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('kelurahan', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
                 });
             }
 
@@ -40,11 +58,24 @@ class TransactionController extends Controller
             }
 
             $transactions = $query->get();
+
+            // Hitung statistik
+            $stats = [
+                'total' => $transactions->count(),
+                'with_pickup' => $transactions->filter(fn($t) => $t->pickupLists->isNotEmpty())->count(),
+                'with_delivery' => $transactions->filter(fn($t) => $t->deliveryLists->isNotEmpty())->count(),
+                'completed' => $transactions->filter(function ($t) {
+                    $pickup = $t->pickupLists->first();
+                    $delivery = $t->deliveryLists->first();
+                    return ($pickup && $pickup->tanggal_diambil) && ($delivery && $delivery->tanggal_terkirim);
+                })->count(),
+            ];
+
             $kurirs = User::where('role', 'kurir')
                 ->withCount(['deliveries', 'pickups'])
                 ->get();
 
-            return view('transaction.index', compact('transactions', 'kurirs'));
+            return view('transaction.index', compact('transactions', 'kurirs', 'stats'));
         } catch (\Throwable $e) {
             dd($e->getMessage());
             report($e);
